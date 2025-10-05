@@ -552,27 +552,37 @@ font-size: 20vh;
         carrierSource.buffer = chordBuffer;
         carrierSource.loop = true; // Loop the chord
         
-        // Carrier gain (will be modulated by voice)
+        // Carrier gain (louder, always audible)
         const carrierGain = ctx.createGain();
-        carrierGain.gain.value = 0; // Start silent, voice will control it
+        carrierGain.gain.value = 0.6; // Audible base level
         
         carrierSource.connect(carrierGain);
         
-        // Voice envelope extraction (for modulating carrier)
+        // Voice processing
         const preGain = ctx.createGain();
-        preGain.gain.value = 5.0; // Boost for strong modulation
+        preGain.gain.value = 1.5;
         
-        // Envelope follower using full-wave rectifier approximation
-        const envelopeCompressor = ctx.createDynamicsCompressor();
-        envelopeCompressor.threshold.value = -50;
-        envelopeCompressor.knee.value = 40;
-        envelopeCompressor.ratio.value = 20;
-        envelopeCompressor.attack.value = 0.001;
-        envelopeCompressor.release.value = 0.1;
+        // Bit crusher effect
+        const bitCrusher = ctx.createWaveShaper();
+        bitCrusher.curve = makeBitCrushCurve(8); // 8-bit style
+        bitCrusher.oversample = 'none'; // Don't oversample for lo-fi effect
         
-        // Scale envelope to control carrier
-        const envelopeGain = ctx.createGain();
-        envelopeGain.gain.value = 0.8;
+        // Chorus effect
+        const chorusDelay = ctx.createDelay();
+        chorusDelay.delayTime.value = 0.025;
+        
+        const chorusLFO = ctx.createOscillator();
+        chorusLFO.frequency.value = 1.5; // Moderate wobble
+        chorusLFO.type = 'sine';
+        
+        const chorusDepth = ctx.createGain();
+        chorusDepth.gain.value = 0.008; // Noticeable modulation
+        
+        chorusLFO.connect(chorusDepth);
+        chorusDepth.connect(chorusDelay.delayTime);
+        
+        const chorusGain = ctx.createGain();
+        chorusGain.gain.value = 0.5;
         
         // Vocoded output
         const vocoderGain = ctx.createGain();
@@ -603,11 +613,11 @@ font-size: 20vh;
         compressor.release.value = 0.25;
         
         // Mix
-        const dryGain = ctx.createGain();
-        dryGain.gain.value = 0.25; // Some original voice
+        const voiceGain = ctx.createGain();
+        voiceGain.gain.value = 0.7; // Processed voice
         
-        const wetGain = ctx.createGain();
-        wetGain.gain.value = 0.75; // Vocoded signal
+        const carrierMixGain = ctx.createGain();
+        carrierMixGain.gain.value = 0.8; // Strong carrier presence
         
         const reverbGain = ctx.createGain();
         reverbGain.gain.value = 0.3;
@@ -616,31 +626,34 @@ font-size: 20vh;
         const outputGain = ctx.createGain();
         outputGain.gain.value = 0.9;
         
-        // Connect vocoder signal path
+        // Connect voice processing chain
         source.connect(preGain);
         preGain.connect(lowCut);
         
-        // Voice envelope extraction - controls the carrier
-        lowCut.connect(envelopeCompressor);
-        envelopeCompressor.connect(envelopeGain);
-        envelopeGain.connect(carrierGain.gain); // Voice modulates carrier volume!
+        // Add bit crusher to voice
+        lowCut.connect(bitCrusher);
         
-        // Process the modulated carrier (vocoded output)
-        carrierGain.connect(vocoderGain);
-        vocoderGain.connect(presence);
-        presence.connect(wetGain);
+        // Add chorus to voice
+        bitCrusher.connect(chorusDelay);
+        chorusDelay.connect(chorusGain);
         
-        // Dry path (some original voice for intelligibility)
-        lowCut.connect(dryGain);
+        // Mix processed voice
+        bitCrusher.connect(voiceGain); // Direct path
+        chorusGain.connect(voiceGain);  // Chorus path
         
-        // Add reverb
-        wetGain.connect(convolver);
-        dryGain.connect(convolver);
+        // Add presence EQ to voice
+        voiceGain.connect(presence);
+        
+        // Carrier (chord) goes through separately
+        carrierGain.connect(carrierMixGain);
+        carrierMixGain.connect(presence);
+        
+        // Both go to reverb
+        presence.connect(convolver);
         convolver.connect(reverbGain);
         
         // Mix to compressor
-        wetGain.connect(compressor);
-        dryGain.connect(compressor);
+        presence.connect(compressor);
         reverbGain.connect(compressor);
         
         // Final output
@@ -650,11 +663,13 @@ font-size: 20vh;
         // Start everything
         source.start(0);
         carrierSource.start(0);
+        chorusLFO.start(0);
         
         return new Promise((resolve) => {
             source.onended = () => {
                 try {
                     carrierSource.stop();
+                    chorusLFO.stop();
                 } catch(e) {
                     // Already stopped
                 }
@@ -663,15 +678,16 @@ font-size: 20vh;
         });
     }
 
-    function makeRingModCurve() {
+    function makeBitCrushCurve(bits) {
         const samples = 44100;
         const curve = new Float32Array(samples);
+        const levels = Math.pow(2, bits);
         
         for (let i = 0; i < samples; i++) {
             const x = (i * 2) / samples - 1;
-            // Ring modulation = multiplication of two signals
-            // Approximate with x^2 for signal multiplication effect
-            curve[i] = x * x * Math.sign(x) * 2.5;
+            // Quantize to bit depth
+            const quantized = Math.floor(x * levels) / levels;
+            curve[i] = quantized;
         }
         return curve;
     }
