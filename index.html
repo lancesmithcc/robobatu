@@ -543,7 +543,7 @@ font-size: 20vh;
             osc.frequency.value = freq;
             
             const gain = ctx.createGain();
-            gain.gain.value = 0.15; // Mix level for each note
+            gain.gain.value = 0.35; // Louder chord for vocoder effect
             
             osc.connect(gain);
             oscillators.push(osc);
@@ -594,7 +594,7 @@ font-size: 20vh;
         
         // Vocoder output mixer
         const vocoderOut = ctx.createGain();
-        vocoderOut.gain.value = 1.5;
+        vocoderOut.gain.value = 2.5; // Boost vocoded signal
         
         // High-pass filter
         const highPass = ctx.createBiquadFilter();
@@ -627,15 +627,15 @@ font-size: 20vh;
         compressor.attack.value = 0.003;
         compressor.release.value = 0.25;
         
-        // Wet/Dry mix
+        // Wet/Dry mix - favor vocoded signal
         const dryGain = ctx.createGain();
-        dryGain.gain.value = 0.3;
+        dryGain.gain.value = 0.2;
         
         const wetGain = ctx.createGain();
-        wetGain.gain.value = 0.7;
+        wetGain.gain.value = 1.2; // Strong vocoder signal
         
         const reverbGain = ctx.createGain();
-        reverbGain.gain.value = 0.3;
+        reverbGain.gain.value = 0.4;
         
         // Output
         const outputGain = ctx.createGain();
