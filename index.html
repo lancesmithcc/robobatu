@@ -285,9 +285,14 @@ font-size: 20vh;
         }
     }
 
+    /* Mobile Responsive Styles */
     @media (max-width: 768px) {
-        h1 {
-            font-size: 80vh;
+        h1 .title-text {
+            font-size: 12vw !important; /* Use viewport width instead of height on mobile */
+        }
+        
+        .subtitle {
+            font-size: 5vw;
         }
 
         .braille-grid {
@@ -296,12 +301,42 @@ font-size: 20vh;
         }
 
         .ascii-art {
-            font-size: 8vh;
-            padding: 1rem;
+            font-size: 4vw; /* Scale down ASCII art for mobile */
+            padding: 0.5rem;
+            max-width: 95vw;
+        }
+        
+        .content {
+            padding: 2rem 1rem;
+        }
+        
+        .card {
+            padding: 1.5rem;
+            margin: 1rem 0;
         }
 
         .haiku {
             font-size: 1.2rem;
+        }
+    }
+    
+    /* Extra small mobile devices */
+    @media (max-width: 480px) {
+        h1 .title-text {
+            font-size: 14vw !important;
+        }
+        
+        .subtitle {
+            font-size: 6vw;
+        }
+        
+        .ascii-art {
+            font-size: 3.5vw;
+            line-height: 1.2;
+        }
+        
+        .haiku {
+            font-size: 1.1rem;
         }
     }
 </style>
