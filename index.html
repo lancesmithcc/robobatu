@@ -484,96 +484,147 @@ font-size: 55px;
         return audioContext;
     }
 
-    // Apply electro shift effect (vocoder-like robotic effect)
-    async function applyElectroShift(audioBuffer) {
+    // Apply harmonic auto-tune style effect
+    async function applyHarmonicEffect(audioBuffer) {
         const ctx = getAudioContext();
+        
+        // Create impulse response for reverb (harmonic richness)
+        const reverbBuffer = createReverbImpulse(ctx);
+        
+        // Main source
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
-
-        // Create effect chain for electro shift
+        
+        // Pre-gain
         const preGain = ctx.createGain();
-        preGain.gain.value = 1.2;
-
-        // High-pass filter (removes low rumble)
+        preGain.gain.value = 1.0;
+        
+        // High-pass to clean up low end
         const highPass = ctx.createBiquadFilter();
         highPass.type = 'highpass';
-        highPass.frequency.value = 300;
-        highPass.Q.value = 0.5;
-
-        // Distortion (adds grit)
-        const distortion = ctx.createWaveShaper();
-        distortion.curve = makeDistortionCurve(80);
-        distortion.oversample = '4x';
-
-        // Band-pass filters for vocoder effect
-        const bandPass1 = ctx.createBiquadFilter();
-        bandPass1.type = 'bandpass';
-        bandPass1.frequency.value = 800;
-        bandPass1.Q.value = 8;
-
-        const bandPass2 = ctx.createBiquadFilter();
-        bandPass2.type = 'bandpass';
-        bandPass2.frequency.value = 1600;
-        bandPass2.Q.value = 8;
-
-        // Mix the two bandpass filters
-        const merger = ctx.createChannelMerger(2);
-        const splitter = ctx.createChannelSplitter(2);
-
-        // Slight delay for robotic effect
-        const delay = ctx.createDelay();
-        delay.delayTime.value = 0.02;
-
-        // Final EQ boost
+        highPass.frequency.value = 120;
+        highPass.Q.value = 0.7;
+        
+        // Parametric EQ for vocal presence
+        const midBoost = ctx.createBiquadFilter();
+        midBoost.type = 'peaking';
+        midBoost.frequency.value = 2500;
+        midBoost.Q.value = 1.5;
+        midBoost.gain.value = 4;
+        
+        // Subtle distortion for harmonics
+        const harmonizerDistortion = ctx.createWaveShaper();
+        harmonizerDistortion.curve = makeHarmonicCurve();
+        harmonizerDistortion.oversample = '4x';
+        
+        // Convolver for reverb/harmonic space
+        const convolver = ctx.createConvolver();
+        convolver.buffer = reverbBuffer;
+        
+        // Delay for chorus effect (auto-tune shimmer)
+        const chorusDelay = ctx.createDelay();
+        chorusDelay.delayTime.value = 0.025;
+        
+        // LFO for chorus modulation (auto-tune warble)
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = 3; // 3 Hz wobble
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 0.003; // Subtle modulation
+        lfo.connect(lfoGain);
+        lfoGain.connect(chorusDelay.delayTime);
+        lfo.start(0);
+        
+        // Treble sparkle
         const trebleBoost = ctx.createBiquadFilter();
         trebleBoost.type = 'highshelf';
-        trebleBoost.frequency.value = 3000;
-        trebleBoost.gain.value = 6;
-
-        // Compression
+        trebleBoost.frequency.value = 4000;
+        trebleBoost.gain.value = 3;
+        
+        // Compression for auto-tune consistency
         const compressor = ctx.createDynamicsCompressor();
-        compressor.threshold.value = -20;
-        compressor.ratio.value = 12;
-
-        const postGain = ctx.createGain();
-        postGain.gain.value = 0.8;
-
-        // Connect the chain
+        compressor.threshold.value = -24;
+        compressor.knee.value = 30;
+        compressor.ratio.value = 8;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.25;
+        
+        // Dry/Wet mix for reverb
+        const dryGain = ctx.createGain();
+        dryGain.gain.value = 0.7;
+        
+        const wetGain = ctx.createGain();
+        wetGain.gain.value = 0.3;
+        
+        const chorusGain = ctx.createGain();
+        chorusGain.gain.value = 0.4;
+        
+        // Output gain
+        const outputGain = ctx.createGain();
+        outputGain.gain.value = 0.9;
+        
+        // Connect the effect chain
         source.connect(preGain);
         preGain.connect(highPass);
-        highPass.connect(distortion);
-        distortion.connect(splitter);
+        highPass.connect(midBoost);
+        midBoost.connect(harmonizerDistortion);
         
-        // Dual band processing
-        splitter.connect(bandPass1, 0);
-        splitter.connect(bandPass2, 1);
-        bandPass1.connect(merger, 0, 0);
-        bandPass2.connect(merger, 0, 1);
+        // Dry path
+        harmonizerDistortion.connect(dryGain);
         
-        merger.connect(delay);
-        delay.connect(trebleBoost);
+        // Wet path (reverb)
+        harmonizerDistortion.connect(convolver);
+        convolver.connect(wetGain);
+        
+        // Chorus path
+        harmonizerDistortion.connect(chorusDelay);
+        chorusDelay.connect(chorusGain);
+        
+        // Mix all paths
+        dryGain.connect(trebleBoost);
+        wetGain.connect(trebleBoost);
+        chorusGain.connect(trebleBoost);
+        
         trebleBoost.connect(compressor);
-        compressor.connect(postGain);
-        postGain.connect(ctx.destination);
-
+        compressor.connect(outputGain);
+        outputGain.connect(ctx.destination);
+        
         source.start(0);
         
         return new Promise((resolve) => {
-            source.onended = resolve;
+            source.onended = () => {
+                lfo.stop();
+                resolve();
+            };
         });
     }
 
-    function makeDistortionCurve(amount) {
-        const k = amount;
+    function makeHarmonicCurve() {
         const samples = 44100;
         const curve = new Float32Array(samples);
-        const deg = Math.PI / 180;
         
         for (let i = 0; i < samples; i++) {
             const x = (i * 2) / samples - 1;
-            curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            // Soft saturation for harmonics
+            curve[i] = Math.tanh(x * 1.5);
         }
         return curve;
+    }
+
+    function createReverbImpulse(ctx) {
+        const sampleRate = ctx.sampleRate;
+        const length = sampleRate * 2; // 2 second reverb
+        const impulse = ctx.createBuffer(2, length, sampleRate);
+        
+        for (let channel = 0; channel < 2; channel++) {
+            const channelData = impulse.getChannelData(channel);
+            for (let i = 0; i < length; i++) {
+                // Exponential decay with some randomness for natural reverb
+                const decay = Math.pow(1 - i / length, 2);
+                channelData[i] = (Math.random() * 2 - 1) * decay;
+            }
+        }
+        
+        return impulse;
     }
 
     // === Main Functions ===
@@ -617,8 +668,8 @@ font-size: 55px;
 
             status.textContent = '🔊 Speaking...';
 
-            // Apply electro shift effect and play
-            await applyElectroShift(audioBuffer);
+            // Apply harmonic auto-tune effect and play
+            await applyHarmonicEffect(audioBuffer);
 
             status.textContent = '✨ Complete';
 

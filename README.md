@@ -8,8 +8,8 @@ A peaceful AI companion that speaks wisdom through generated haikus with a robot
 
 - 🎨 Beautiful gradient-animated braille background
 - 🎭 Dynamic haiku generation in Robobatu's unique voice with double-word emphasis
-- 🎵 Text-to-speech using [Kokoro TTS](https://kokoro.lancesmith.cc) with Japanese Alpha voice
-- 🎚️ Web Audio API "electro shift" voice filter for robotic effect
+- 🎵 Text-to-speech using [Kokoro TTS](https://kokoro.lancesmith.cc) with Bella voice
+- 🎚️ Web Audio API harmonic auto-tune effect for ethereal robotic voice
 - ⚡ One-button ACTIVATE system for continuous wisdom flow
 - 📱 Fully responsive design
 
@@ -86,14 +86,15 @@ Robobatu generates haikus using templates that follow the signature style:
 
 ### Voice Processing
 1. Frontend generates a haiku
-2. Netlify function calls Kokoro API with Japanese Alpha voice
+2. Netlify function calls Kokoro API with American Female Bella voice (A- rated)
 3. Audio is returned and processed through Web Audio API
-4. Electro shift effect chain applies:
-   - High-pass filtering
-   - Wave shaping distortion
-   - Dual bandpass filters (800Hz & 1600Hz) for vocoder effect
-   - Delay and compression
-   - Treble boost
+4. Harmonic auto-tune effect chain applies:
+   - Parametric EQ for vocal presence
+   - Harmonic saturation for richness
+   - Convolver reverb for spatial depth
+   - Chorus with LFO modulation for auto-tune shimmer
+   - Compression for consistency
+   - High-frequency sparkle
 
 ## File Structure
 
@@ -115,17 +116,17 @@ To change the voice or effects, edit:
 
 **Voice settings** in `netlify/functions/generate-speech.js`:
 ```javascript
-voice: 'jf_alpha',  // Japanese Female Alpha (C+) - Change to any Kokoro voice
-speed: 0.9          // Adjust speed (0.25 - 5.0)
+voice: 'af_bella',  // American Female Bella (A-) - Change to any Kokoro voice
+speed: 0.85         // Adjust speed (0.25 - 5.0)
 ```
 
-Available voices include: `jf_alpha`, `jm_kumo`, `af_bella`, `af_sarah`, `am_fenrir`, and more at [kokoro.lancesmith.cc](https://kokoro.lancesmith.cc)
+Available voices include: `af_bella`, `af_heart`, `af_sarah`, `am_fenrir`, and more at [kokoro.lancesmith.cc](https://kokoro.lancesmith.cc)
 
-**Audio effects** in `index.html` (search for `applyElectroShift` function):
-- Adjust filter frequencies
-- Modify distortion amount
-- Change delay timing
-- Tune EQ settings
+**Audio effects** in `index.html` (search for `applyHarmonicEffect` function):
+- Adjust reverb depth (wet/dry mix)
+- Modify chorus intensity
+- Change LFO modulation speed
+- Tune EQ and compression settings
 
 ## API Reference
 
