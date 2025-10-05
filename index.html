@@ -311,16 +311,14 @@ font-size: 55px;
 <div class="content">
     
     
-    <div class="ascii-art">
-
+    <div class="ascii-art" id="robotArt">
  _^_
  ___/___\___
  /::::::::::::\
- |..(-)..(-)..|
- |.....===....|
+ |..<span id="leftEye">(-)</span>..<span id="rightEye">(-)</span>..|
+ |.....<span id="mouth">===</span>....|
  \___________/
- ===<br/>
-
+ ===
 </div>
 <h1>
     <span class="title-text">Robobatu</span>
@@ -476,12 +474,54 @@ font-size: 55px;
     let audioContext = null;
     let isAutoPlaying = false;
     let autoPlayTimeout = null;
+    let animationInterval = null;
 
     function getAudioContext() {
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         return audioContext;
+    }
+
+    // === ASCII Animation ===
+    
+    function startRobotAnimation() {
+        const leftEye = document.getElementById('leftEye');
+        const rightEye = document.getElementById('rightEye');
+        const mouth = document.getElementById('mouth');
+        
+        let eyeState = 0;
+        let mouthState = 0;
+        
+        // Animate eyes and mouth at different rates
+        animationInterval = setInterval(() => {
+            // Alternate eyes every cycle
+            eyeState = (eyeState + 1) % 2;
+            const eyeChar = eyeState === 0 ? '(-)' : '(O)';
+            leftEye.textContent = eyeChar;
+            rightEye.textContent = eyeChar;
+            
+            // Alternate mouth every cycle
+            mouthState = (mouthState + 1) % 2;
+            const mouthChar = mouthState === 0 ? '===' : '-~-';
+            mouth.textContent = mouthChar;
+        }, 300); // Animate every 300ms
+    }
+    
+    function stopRobotAnimation() {
+        if (animationInterval) {
+            clearInterval(animationInterval);
+            animationInterval = null;
+        }
+        
+        // Reset to default state
+        const leftEye = document.getElementById('leftEye');
+        const rightEye = document.getElementById('rightEye');
+        const mouth = document.getElementById('mouth');
+        
+        if (leftEye) leftEye.textContent = '(-)';
+        if (rightEye) rightEye.textContent = '(-)';
+        if (mouth) mouth.textContent = '===';
     }
 
     // Apply strong harmonic auto-tune style effect
@@ -697,8 +737,14 @@ font-size: 55px;
 
             status.textContent = '🔊 Speaking...';
 
+            // Start robot animation
+            startRobotAnimation();
+
             // Apply harmonic auto-tune effect and play
             await applyHarmonicEffect(audioBuffer);
+
+            // Stop robot animation
+            stopRobotAnimation();
 
             status.textContent = '✨ Complete';
 
@@ -715,6 +761,7 @@ font-size: 55px;
             isAutoPlaying = false;
             activateBtn.classList.remove('active');
             activateBtn.textContent = '⚡ ACTIVATE';
+            stopRobotAnimation(); // Stop animation on error
         } finally {
             activateBtn.disabled = false;
         }
@@ -737,6 +784,7 @@ font-size: 55px;
             if (autoPlayTimeout) {
                 clearTimeout(autoPlayTimeout);
             }
+            stopRobotAnimation(); // Stop animation when deactivated
             document.getElementById('status').textContent = 'Paused';
         }
     });
