@@ -1,9 +1,8 @@
 # Environment variables
 .env
 
-# Netlify
+# Netlify build output
 .netlify/
-netlify/
 
 # Dependencies
 node_modules/
