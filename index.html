@@ -552,11 +552,35 @@ font-size: 20vh;
         carrierSource.buffer = chordBuffer;
         carrierSource.loop = true; // Loop the chord
         
-        // Carrier gain (balanced with voice)
+        // Carrier gain (quieter backing)
         const carrierGain = ctx.createGain();
-        carrierGain.gain.value = 0.35; // Subtle backing
+        carrierGain.gain.value = 0.175; // Half volume, subtle backing
         
         carrierSource.connect(carrierGain);
+        
+        // Binaural beat at E3 (164.81 Hz) with 0.5Hz difference
+        const binauralLeft = ctx.createOscillator();
+        binauralLeft.type = 'sine';
+        binauralLeft.frequency.value = 164.81; // E3
+        
+        const binauralRight = ctx.createOscillator();
+        binauralRight.type = 'sine';
+        binauralRight.frequency.value = 165.31; // E3 + 0.5Hz
+        
+        // Create stereo panner for left/right separation
+        const leftPanner = ctx.createStereoPanner();
+        leftPanner.pan.value = -1; // Full left
+        
+        const rightPanner = ctx.createStereoPanner();
+        rightPanner.pan.value = 1; // Full right
+        
+        const binauralGain = ctx.createGain();
+        binauralGain.gain.value = 0.15; // Subtle constant tone
+        
+        binauralLeft.connect(leftPanner);
+        binauralRight.connect(rightPanner);
+        leftPanner.connect(binauralGain);
+        rightPanner.connect(binauralGain);
         
         // Voice processing
         const preGain = ctx.createGain();
@@ -653,6 +677,9 @@ font-size: 20vh;
         carrierGain.connect(carrierMixGain);
         carrierMixGain.connect(presence);
         
+        // Binaural beat (constant, bypasses most processing)
+        binauralGain.connect(compressor);
+        
         // Both go to reverb
         presence.connect(convolver);
         convolver.connect(reverbGain);
@@ -669,12 +696,16 @@ font-size: 20vh;
         source.start(0);
         carrierSource.start(0);
         chorusLFO.start(0);
+        binauralLeft.start(0);
+        binauralRight.start(0);
         
         return new Promise((resolve) => {
             source.onended = () => {
                 try {
                     carrierSource.stop();
                     chorusLFO.stop();
+                    binauralLeft.stop();
+                    binauralRight.stop();
                 } catch(e) {
                     // Already stopped
                 }
