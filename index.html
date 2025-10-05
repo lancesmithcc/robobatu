@@ -520,16 +520,11 @@ font-size: 20vh;
         if (mouth) mouth.textContent = '===';
     }
 
-    // Apply vocoder effect using chord.mp3 as carrier
-    async function applyHarmonicEffect(audioBuffer) {
+    // Start continuous carrier and binaural beat (called once on ACTIVATE)
+    async function startContinuousAudio() {
+        if (continuousNodesStarted) return;
+        
         const ctx = getAudioContext();
-        
-        // Create reverb
-        const reverbBuffer = createReverbImpulse(ctx);
-        
-        // Main voice source
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuffer;
         
         // Load chord.mp3 as carrier
         let chordBuffer;
@@ -539,48 +534,89 @@ font-size: 20vh;
             chordBuffer = await ctx.decodeAudioData(arrayBuffer);
         } catch (error) {
             console.error('Failed to load chord.mp3:', error);
-            // Fallback: just pass through voice
-            source.connect(ctx.destination);
-            source.start(0);
-            return new Promise((resolve) => {
-                source.onended = resolve;
-            });
+            return;
         }
         
-        // Create carrier source (the chord)
-        const carrierSource = ctx.createBufferSource();
+        // Create carrier source (the chord) - continuous
+        carrierSource = ctx.createBufferSource();
         carrierSource.buffer = chordBuffer;
-        carrierSource.loop = true; // Loop the chord
+        carrierSource.loop = true;
         
         // Carrier gain (quieter backing)
         const carrierGain = ctx.createGain();
-        carrierGain.gain.value = 0.175; // Half volume, subtle backing
+        carrierGain.gain.value = 0.175;
         
         carrierSource.connect(carrierGain);
+        carrierGain.connect(ctx.destination);
         
-        // Binaural beat at E3 (164.81 Hz) with 0.5Hz difference
-        const binauralLeft = ctx.createOscillator();
+        // Binaural beat at E3 - continuous
+        binauralLeft = ctx.createOscillator();
         binauralLeft.type = 'sine';
         binauralLeft.frequency.value = 164.81; // E3
         
-        const binauralRight = ctx.createOscillator();
+        binauralRight = ctx.createOscillator();
         binauralRight.type = 'sine';
         binauralRight.frequency.value = 165.31; // E3 + 0.5Hz
         
         // Create stereo panner for left/right separation
         const leftPanner = ctx.createStereoPanner();
-        leftPanner.pan.value = -1; // Full left
+        leftPanner.pan.value = -1;
         
         const rightPanner = ctx.createStereoPanner();
-        rightPanner.pan.value = 1; // Full right
+        rightPanner.pan.value = 1;
         
         const binauralGain = ctx.createGain();
-        binauralGain.gain.value = 0.15; // Subtle constant tone
+        binauralGain.gain.value = 0.15;
         
         binauralLeft.connect(leftPanner);
         binauralRight.connect(rightPanner);
         leftPanner.connect(binauralGain);
         rightPanner.connect(binauralGain);
+        binauralGain.connect(ctx.destination);
+        
+        // Start continuous audio
+        carrierSource.start(0);
+        binauralLeft.start(0);
+        binauralRight.start(0);
+        
+        continuousNodesStarted = true;
+    }
+    
+    // Stop continuous audio (called on DEACTIVATE)
+    function stopContinuousAudio() {
+        try {
+            if (carrierSource) {
+                carrierSource.stop();
+                carrierSource = null;
+            }
+            if (binauralLeft) {
+                binauralLeft.stop();
+                binauralLeft = null;
+            }
+            if (binauralRight) {
+                binauralRight.stop();
+                binauralRight = null;
+            }
+            if (chorusLFO) {
+                chorusLFO.stop();
+                chorusLFO = null;
+            }
+        } catch(e) {
+            // Already stopped
+        }
+        continuousNodesStarted = false;
+    }
+    
+    // Apply vocoder effect to voice (connects to continuous carrier/binaural)
+    async function applyHarmonicEffect(audioBuffer) {
+        const ctx = getAudioContext();
+        
+        // Create reverb
+        const reverbBuffer = createReverbImpulse(ctx);
+        
+        // Main voice source
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
         
         // Voice processing
         const preGain = ctx.createGain();
@@ -599,9 +635,13 @@ font-size: 20vh;
         const chorusDelay = ctx.createDelay();
         chorusDelay.delayTime.value = 0.03;
         
-        const chorusLFO = ctx.createOscillator();
-        chorusLFO.frequency.value = 2.5; // Faster wobble
-        chorusLFO.type = 'sine';
+        // Create chorus LFO if not already running
+        if (!chorusLFO) {
+            chorusLFO = ctx.createOscillator();
+            chorusLFO.frequency.value = 2.5; // Faster wobble
+            chorusLFO.type = 'sine';
+            chorusLFO.start(0);
+        }
         
         const chorusDepth = ctx.createGain();
         chorusDepth.gain.value = 0.015; // Much stronger modulation
@@ -673,18 +713,11 @@ font-size: 20vh;
         // Add presence EQ to voice
         voiceGain.connect(presence);
         
-        // Carrier (chord) goes through separately
-        carrierGain.connect(carrierMixGain);
-        carrierMixGain.connect(presence);
-        
-        // Binaural beat (constant, bypasses most processing)
-        binauralGain.connect(compressor);
-        
-        // Both go to reverb
+        // Voice goes to reverb
         presence.connect(convolver);
         convolver.connect(reverbGain);
         
-        // Mix to compressor
+        // Mix to compressor (carrier and binaural are already connected to destination)
         presence.connect(compressor);
         reverbGain.connect(compressor);
         
@@ -692,25 +725,11 @@ font-size: 20vh;
         compressor.connect(outputGain);
         outputGain.connect(ctx.destination);
         
-        // Start everything
+        // Start voice only (carrier and binaural are already running)
         source.start(0);
-        carrierSource.start(0);
-        chorusLFO.start(0);
-        binauralLeft.start(0);
-        binauralRight.start(0);
         
         return new Promise((resolve) => {
-            source.onended = () => {
-                try {
-                    carrierSource.stop();
-                    chorusLFO.stop();
-                    binauralLeft.stop();
-                    binauralRight.stop();
-                } catch(e) {
-                    // Already stopped
-                }
-                resolve();
-            };
+            source.onended = resolve;
         });
     }
 
