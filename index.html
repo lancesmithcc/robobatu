@@ -621,13 +621,48 @@ font-size: 20vh;
         // Create reverb
         const reverbBuffer = createReverbImpulse(ctx);
         
-        // Main voice source
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuffer;
+        // Create 3-voice harmony: B1, E2, E3
+        // B1 = 61.74 Hz (low rumble)
+        // E2 = 82.41 Hz (octave below E3)
+        // E3 = 164.81 Hz (root/original)
         
-        // Voice processing
+        const voiceB1 = ctx.createBufferSource();
+        voiceB1.buffer = audioBuffer;
+        voiceB1.playbackRate.value = 0.375; // Pitch down to B1 range
+        
+        const voiceE2 = ctx.createBufferSource();
+        voiceE2.buffer = audioBuffer;
+        voiceE2.playbackRate.value = 0.5; // Pitch down one octave to E2
+        
+        const voiceE3 = ctx.createBufferSource();
+        voiceE3.buffer = audioBuffer;
+        voiceE3.playbackRate.value = 1.0; // Original pitch at E3 range
+        
+        // Mix gains for balanced harmony
+        const gainB1 = ctx.createGain();
+        gainB1.gain.value = 0.4; // Low voice - subtle foundation
+        
+        const gainE2 = ctx.createGain();
+        gainE2.gain.value = 0.5; // Mid voice - body
+        
+        const gainE3 = ctx.createGain();
+        gainE3.gain.value = 0.6; // High voice - clarity
+        
+        voiceB1.connect(gainB1);
+        voiceE2.connect(gainE2);
+        voiceE3.connect(gainE3);
+        
+        // Merge harmony voices
+        const harmonyMerger = ctx.createGain();
+        gainB1.connect(harmonyMerger);
+        gainE2.connect(harmonyMerger);
+        gainE3.connect(harmonyMerger);
+        
+        // Process the merged harmony
         const preGain = ctx.createGain();
-        preGain.gain.value = 1.5;
+        preGain.gain.value = 1.2; // Slightly lower to account for 3 voices
+        
+        harmonyMerger.connect(preGain);
         
         // Bit crusher effect (more aggressive)
         const bitCrusher = ctx.createWaveShaper();
@@ -701,8 +736,7 @@ font-size: 20vh;
         const outputGain = ctx.createGain();
         outputGain.gain.value = 0.9;
         
-        // Connect voice processing chain
-        source.connect(preGain);
+        // Voice processing chain (now processing harmony)
         preGain.connect(lowCut);
         
         // Add bit crusher and sample rate reduction to voice
@@ -732,11 +766,14 @@ font-size: 20vh;
         compressor.connect(outputGain);
         outputGain.connect(ctx.destination);
         
-        // Start voice only (carrier and binaural are already running)
-        source.start(0);
+        // Start all 3 harmony voices (carrier and binaural are already running)
+        voiceB1.start(0);
+        voiceE2.start(0);
+        voiceE3.start(0);
         
         return new Promise((resolve) => {
-            source.onended = resolve;
+            // Wait for the longest voice (slowest playback rate = B1)
+            voiceB1.onended = resolve;
         });
     }
 
