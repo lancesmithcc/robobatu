@@ -23,11 +23,12 @@ export default async (req, context) => {
       },
       body: JSON.stringify({
         model: 'model_q8f16',
-        voice: 'jf_alpha', // Japanese Female Alpha (C+) with English accent
+        // Blend English voice with Japanese voice for unique accent
+        // af_heart speaks English, jf_alpha adds Japanese character
+        voice: 'af_heart*0.7+jf_alpha*0.3',
         input: text,
         response_format: 'mp3',
-        speed: 0.85, // Slightly slower for meditative effect
-        language: 'en-us' // Force English (US) pronunciation
+        speed: 0.85 // Slightly slower for meditative effect
       })
     });
 
