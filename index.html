@@ -552,9 +552,9 @@ font-size: 20vh;
         carrierSource.buffer = chordBuffer;
         carrierSource.loop = true; // Loop the chord
         
-        // Carrier gain (louder, always audible)
+        // Carrier gain (balanced with voice)
         const carrierGain = ctx.createGain();
-        carrierGain.gain.value = 0.6; // Audible base level
+        carrierGain.gain.value = 0.35; // Subtle backing
         
         carrierSource.connect(carrierGain);
         
@@ -562,27 +562,31 @@ font-size: 20vh;
         const preGain = ctx.createGain();
         preGain.gain.value = 1.5;
         
-        // Bit crusher effect
+        // Bit crusher effect (more aggressive)
         const bitCrusher = ctx.createWaveShaper();
-        bitCrusher.curve = makeBitCrushCurve(8); // 8-bit style
-        bitCrusher.oversample = 'none'; // Don't oversample for lo-fi effect
+        bitCrusher.curve = makeBitCrushCurve(5); // 5-bit for obvious lo-fi crunch
+        bitCrusher.oversample = 'none'; // Raw digital sound
         
-        // Chorus effect
+        // Sample rate reducer for additional lo-fi
+        const sampleRateReducer = ctx.createWaveShaper();
+        sampleRateReducer.curve = makeSteppedCurve(32); // Stepped quantization
+        
+        // Chorus effect (stronger)
         const chorusDelay = ctx.createDelay();
-        chorusDelay.delayTime.value = 0.025;
+        chorusDelay.delayTime.value = 0.03;
         
         const chorusLFO = ctx.createOscillator();
-        chorusLFO.frequency.value = 1.5; // Moderate wobble
+        chorusLFO.frequency.value = 2.5; // Faster wobble
         chorusLFO.type = 'sine';
         
         const chorusDepth = ctx.createGain();
-        chorusDepth.gain.value = 0.008; // Noticeable modulation
+        chorusDepth.gain.value = 0.015; // Much stronger modulation
         
         chorusLFO.connect(chorusDepth);
         chorusDepth.connect(chorusDelay.delayTime);
         
         const chorusGain = ctx.createGain();
-        chorusGain.gain.value = 0.5;
+        chorusGain.gain.value = 0.8; // Louder chorus mix
         
         // Vocoded output
         const vocoderGain = ctx.createGain();
@@ -614,10 +618,10 @@ font-size: 20vh;
         
         // Mix
         const voiceGain = ctx.createGain();
-        voiceGain.gain.value = 0.7; // Processed voice
+        voiceGain.gain.value = 1.0; // Stronger processed voice
         
         const carrierMixGain = ctx.createGain();
-        carrierMixGain.gain.value = 0.8; // Strong carrier presence
+        carrierMixGain.gain.value = 0.5; // Subtle carrier backing
         
         const reverbGain = ctx.createGain();
         reverbGain.gain.value = 0.3;
@@ -630,16 +634,17 @@ font-size: 20vh;
         source.connect(preGain);
         preGain.connect(lowCut);
         
-        // Add bit crusher to voice
+        // Add bit crusher and sample rate reduction to voice
         lowCut.connect(bitCrusher);
+        bitCrusher.connect(sampleRateReducer);
         
-        // Add chorus to voice
-        bitCrusher.connect(chorusDelay);
+        // Add chorus to crushed voice
+        sampleRateReducer.connect(chorusDelay);
         chorusDelay.connect(chorusGain);
         
-        // Mix processed voice
-        bitCrusher.connect(voiceGain); // Direct path
-        chorusGain.connect(voiceGain);  // Chorus path
+        // Mix processed voice (mostly chorus for obvious effect)
+        sampleRateReducer.connect(voiceGain); // Crushed direct path
+        chorusGain.connect(voiceGain);  // Chorused path (stronger)
         
         // Add presence EQ to voice
         voiceGain.connect(presence);
@@ -685,9 +690,22 @@ font-size: 20vh;
         
         for (let i = 0; i < samples; i++) {
             const x = (i * 2) / samples - 1;
-            // Quantize to bit depth
-            const quantized = Math.floor(x * levels) / levels;
-            curve[i] = quantized;
+            // Quantize to bit depth with hard clipping
+            const quantized = Math.round(x * levels) / levels;
+            curve[i] = Math.max(-1, Math.min(1, quantized));
+        }
+        return curve;
+    }
+
+    function makeSteppedCurve(steps) {
+        const samples = 44100;
+        const curve = new Float32Array(samples);
+        
+        for (let i = 0; i < samples; i++) {
+            const x = (i * 2) / samples - 1;
+            // Create stepped/staircase effect
+            const stepped = Math.round(x * steps) / steps;
+            curve[i] = stepped;
         }
         return curve;
     }
