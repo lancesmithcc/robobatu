@@ -520,7 +520,7 @@ font-size: 20vh;
         if (mouth) mouth.textContent = '===';
     }
 
-    // Apply vocoder effect with happy chord
+    // Apply gentle harmonic synthesizer effect
     async function applyHarmonicEffect(audioBuffer) {
         const ctx = getAudioContext();
         
@@ -531,111 +531,119 @@ font-size: 20vh;
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
         
-        // Create synthesizer carrier signal (C Major chord - TWO octaves lower)
-        // Frequencies: C2=65.41Hz, E2=82.41Hz, G2=98Hz, C3=130.81Hz
-        const chordFrequencies = [65.41, 82.41, 98.00, 130.81];
+        // Create gentle harmonic oscillators (C Major pentatonic for soothing sound)
+        // C4=261.63Hz, E4=329.63Hz, G4=392Hz
+        const harmonyFrequencies = [261.63, 329.63, 392.00];
         const oscillators = [];
+        const oscGains = [];
         
-        chordFrequencies.forEach((freq) => {
+        harmonyFrequencies.forEach((freq) => {
             const osc = ctx.createOscillator();
-            osc.type = 'sawtooth'; // Rich harmonics for vocoder
+            osc.type = 'sine'; // Pure, smooth tone
             osc.frequency.value = freq;
+            
+            const gain = ctx.createGain();
+            gain.gain.value = 0.12; // Gentle level
+            
+            osc.connect(gain);
             oscillators.push(osc);
+            oscGains.push(gain);
         });
         
-        // Create carrier mixer
-        const carrierMixer = ctx.createGain();
-        carrierMixer.gain.value = 0;  // Start at 0, will be modulated by voice
+        // Mix harmonies together
+        const harmonyMixer = ctx.createGain();
+        harmonyMixer.gain.value = 0.6;
         
-        // Connect all oscillators to carrier mixer
-        oscillators.forEach(osc => osc.connect(carrierMixer));
-        
-        // Create dynamics processor to extract voice envelope
-        const envelopeFollower = ctx.createDynamicsCompressor();
-        envelopeFollower.threshold.value = -50;
-        envelopeFollower.knee.value = 40;
-        envelopeFollower.ratio.value = 12;
-        envelopeFollower.attack.value = 0.0;
-        envelopeFollower.release.value = 0.25;
+        oscGains.forEach(gain => gain.connect(harmonyMixer));
         
         // Voice processing
         const preGain = ctx.createGain();
-        preGain.gain.value = 3.0; // Strong input
+        preGain.gain.value = 1.2;
         
-        // Vocoder effect output
-        const vocoderGain = ctx.createGain();
-        vocoderGain.gain.value = 3.5; // Strong boost for vocoded signal
+        // Gentle EQ
+        const lowCut = ctx.createBiquadFilter();
+        lowCut.type = 'highpass';
+        lowCut.frequency.value = 80;
+        lowCut.Q.value = 0.7;
         
-        // High-pass filter
-        const highPass = ctx.createBiquadFilter();
-        highPass.type = 'highpass';
-        highPass.frequency.value = 100;
-        highPass.Q.value = 0.7;
-        
-        // Presence boost for clarity
+        // Soft presence boost
         const presence = ctx.createBiquadFilter();
         presence.type = 'peaking';
-        presence.frequency.value = 3000;
-        presence.Q.value = 2.0;
-        presence.gain.value = 6;
+        presence.frequency.value = 2500;
+        presence.Q.value = 1.0;
+        presence.gain.value = 3;
         
-        // Shimmer/sparkle
-        const shimmer = ctx.createBiquadFilter();
-        shimmer.type = 'highshelf';
-        shimmer.frequency.value = 5000;
-        shimmer.gain.value = 4;
+        // Gentle high-end sparkle
+        const airBand = ctx.createBiquadFilter();
+        airBand.type = 'highshelf';
+        airBand.frequency.value = 8000;
+        airBand.gain.value = 2;
         
-        // Convolver for space
+        // Soft chorus for thickness
+        const chorusDelay = ctx.createDelay();
+        chorusDelay.delayTime.value = 0.02;
+        
+        const chorusLFO = ctx.createOscillator();
+        chorusLFO.frequency.value = 0.5; // Slow, gentle modulation
+        const chorusDepth = ctx.createGain();
+        chorusDepth.gain.value = 0.003;
+        chorusLFO.connect(chorusDepth);
+        chorusDepth.connect(chorusDelay.delayTime);
+        
+        const chorusGain = ctx.createGain();
+        chorusGain.gain.value = 0.3;
+        
+        // Reverb
         const convolver = ctx.createConvolver();
         convolver.buffer = reverbBuffer;
         
-        // Compression
+        // Gentle compression
         const compressor = ctx.createDynamicsCompressor();
-        compressor.threshold.value = -20;
+        compressor.threshold.value = -24;
         compressor.knee.value = 30;
-        compressor.ratio.value = 12;
-        compressor.attack.value = 0.003;
+        compressor.ratio.value = 4;
+        compressor.attack.value = 0.005;
         compressor.release.value = 0.25;
         
-        // Wet/Dry mix - favor vocoded signal
-        const dryGain = ctx.createGain();
-        dryGain.gain.value = 0.15; // Less dry voice
+        // Balanced mix
+        const voiceGain = ctx.createGain();
+        voiceGain.gain.value = 0.7; // Main voice
         
-        const wetGain = ctx.createGain();
-        wetGain.gain.value = 2.0; // Very strong vocoder signal
+        const harmonyGain = ctx.createGain();
+        harmonyGain.gain.value = 0.4; // Subtle harmony
         
         const reverbGain = ctx.createGain();
-        reverbGain.gain.value = 0.4;
+        reverbGain.gain.value = 0.25;
         
         // Output
         const outputGain = ctx.createGain();
-        outputGain.gain.value = 0.9;
+        outputGain.gain.value = 0.95;
         
-        // Connect signal path
+        // Connect voice path
         source.connect(preGain);
-        preGain.connect(highPass);
+        preGain.connect(lowCut);
+        lowCut.connect(presence);
+        presence.connect(airBand);
         
-        // Voice controls the carrier volume (amplitude modulation)
-        // This is the actual vocoder effect!
-        highPass.connect(envelopeFollower);
-        envelopeFollower.connect(carrierMixer.gain); // Voice modulates carrier gain
+        // Main voice path
+        airBand.connect(voiceGain);
         
-        // Process the modulated carrier
-        carrierMixer.connect(vocoderGain);
-        vocoderGain.connect(presence);
-        presence.connect(shimmer);
-        shimmer.connect(wetGain);
+        // Chorus path for thickness
+        airBand.connect(chorusDelay);
+        chorusDelay.connect(chorusGain);
+        chorusGain.connect(voiceGain);
         
-        // Dry path (for intelligibility)
-        highPass.connect(dryGain);
+        // Harmony layer (separate from voice, gently accompanies)
+        harmonyMixer.connect(harmonyGain);
         
-        // Reverb path
-        wetGain.connect(convolver);
+        // Reverb on everything
+        voiceGain.connect(convolver);
+        harmonyGain.connect(convolver);
         convolver.connect(reverbGain);
         
-        // Mix all paths
-        dryGain.connect(compressor);
-        wetGain.connect(compressor);
+        // Mix to compressor
+        voiceGain.connect(compressor);
+        harmonyGain.connect(compressor);
         reverbGain.connect(compressor);
         
         // Final output
@@ -644,10 +652,12 @@ font-size: 20vh;
         
         // Start everything
         source.start(0);
+        chorusLFO.start(0);
         oscillators.forEach(osc => osc.start(0));
         
         return new Promise((resolve) => {
             source.onended = () => {
+                chorusLFO.stop();
                 oscillators.forEach(osc => {
                     try {
                         osc.stop();
