@@ -520,190 +520,167 @@ font-size: 20vh;
         if (mouth) mouth.textContent = '===';
     }
 
-    // Apply strong harmonic auto-tune style effect with pitch correction
+    // Apply vocoder effect with happy chord
     async function applyHarmonicEffect(audioBuffer) {
         const ctx = getAudioContext();
         
-        // Create impulse response for reverb (harmonic richness)
+        // Create reverb
         const reverbBuffer = createReverbImpulse(ctx);
         
-        // Create pitch-shifted versions (pentatonic scale for earworm effect)
-        // C Major Pentatonic: C, D, E, G, A (catchy, no dissonance)
-        const pitchShifts = [0, 0.02, 0.04, 0.07, 0.09]; // Semitone ratios
-        const pitchSources = [];
-        
-        for (let i = 0; i < 3; i++) {
-            const pitchSource = ctx.createBufferSource();
-            pitchSource.buffer = audioBuffer;
-            pitchSource.playbackRate.value = 1 + (pitchShifts[i % pitchShifts.length] * 0.5);
-            pitchSources.push(pitchSource);
-        }
-        
-        // Main source
+        // Main voice source
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
         
-        // Pre-gain boost for more intensity
-        const preGain = ctx.createGain();
-        preGain.gain.value = 1.4;
+        // Create synthesizer carrier signal (C Major chord = C, E, G, C)
+        // Frequencies: C4=261.63Hz, E4=329.63Hz, G4=392Hz, C5=523.25Hz
+        const chordFrequencies = [261.63, 329.63, 392.00, 523.25];
+        const oscillators = [];
+        const oscGains = [];
         
-        // High-pass to clean up low end
+        chordFrequencies.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sawtooth'; // Rich harmonics for vocoder
+            osc.frequency.value = freq;
+            
+            const gain = ctx.createGain();
+            gain.gain.value = 0.15; // Mix level for each note
+            
+            osc.connect(gain);
+            oscillators.push(osc);
+            oscGains.push(gain);
+        });
+        
+        // Create vocoder bands (8 bands for frequency analysis)
+        const vocoderBands = [];
+        const carrierBands = [];
+        const bandFrequencies = [200, 400, 800, 1600, 3200, 6400, 9600, 12800];
+        
+        bandFrequencies.forEach(freq => {
+            // Modulator (voice) analysis filter
+            const modFilter = ctx.createBiquadFilter();
+            modFilter.type = 'bandpass';
+            modFilter.frequency.value = freq;
+            modFilter.Q.value = 10; // Narrow band
+            
+            // Carrier (synth) filter at same frequency
+            const carFilter = ctx.createBiquadFilter();
+            carFilter.type = 'bandpass';
+            carFilter.frequency.value = freq;
+            carFilter.Q.value = 10;
+            
+            // Envelope follower (using gain to approximate amplitude)
+            const envelope = ctx.createGain();
+            envelope.gain.value = 0;
+            
+            vocoderBands.push({ modFilter, envelope });
+            carrierBands.push(carFilter);
+        });
+        
+        // Pre-gain
+        const preGain = ctx.createGain();
+        preGain.gain.value = 2.0; // Boost input
+        
+        // Carrier mixer
+        const carrierMix = ctx.createGain();
+        carrierMix.gain.value = 1.0;
+        
+        // Connect carrier oscillators to carrier mixer
+        oscGains.forEach(gain => gain.connect(carrierMix));
+        
+        // Vocoder output mixer
+        const vocoderOut = ctx.createGain();
+        vocoderOut.gain.value = 1.5;
+        
+        // High-pass filter
         const highPass = ctx.createBiquadFilter();
         highPass.type = 'highpass';
-        highPass.frequency.value = 180;
-        highPass.Q.value = 1.2;
+        highPass.frequency.value = 100;
+        highPass.Q.value = 0.7;
         
-        // Aggressive parametric EQ for vocal presence (auto-tune sweet spot)
-        const midBoost = ctx.createBiquadFilter();
-        midBoost.type = 'peaking';
-        midBoost.frequency.value = 3200; // Higher for more robotic
-        midBoost.Q.value = 3.5;
-        midBoost.gain.value = 10; // Very strong boost
+        // Presence boost for clarity
+        const presence = ctx.createBiquadFilter();
+        presence.type = 'peaking';
+        presence.frequency.value = 3000;
+        presence.Q.value = 2.0;
+        presence.gain.value = 6;
         
-        // Stronger distortion for richer harmonics
-        const harmonizerDistortion = ctx.createWaveShaper();
-        harmonizerDistortion.curve = makeHarmonicCurve(2.5); // More aggressive
-        harmonizerDistortion.oversample = '4x';
+        // Shimmer/sparkle
+        const shimmer = ctx.createBiquadFilter();
+        shimmer.type = 'highshelf';
+        shimmer.frequency.value = 5000;
+        shimmer.gain.value = 4;
         
-        // Convolver for reverb/harmonic space
+        // Convolver for space
         const convolver = ctx.createConvolver();
         convolver.buffer = reverbBuffer;
         
-        // Pitch shifter delays for auto-tune effect
-        const pitchDelay1 = ctx.createDelay();
-        pitchDelay1.delayTime.value = 0.01;
-        
-        const pitchDelay2 = ctx.createDelay();
-        pitchDelay2.delayTime.value = 0.015;
-        
-        const pitchDelay3 = ctx.createDelay();
-        pitchDelay3.delayTime.value = 0.02;
-        
-        // Musical LFO for auto-tune wobble (synced to musical intervals)
-        const lfo1 = ctx.createOscillator();
-        lfo1.frequency.value = 6; // 6 Hz for T-Pain style wobble
-        lfo1.type = 'sine';
-        const lfo1Gain = ctx.createGain();
-        lfo1Gain.gain.value = 0.012; // Strong pitch modulation
-        lfo1.connect(lfo1Gain);
-        lfo1Gain.connect(pitchDelay1.delayTime);
-        lfo1.start(0);
-        
-        // Secondary musical LFO (harmony)
-        const lfo2 = ctx.createOscillator();
-        lfo2.frequency.value = 4.5; // Different rate for complexity
-        lfo2.type = 'triangle';
-        const lfo2Gain = ctx.createGain();
-        lfo2Gain.gain.value = 0.01;
-        lfo2.connect(lfo2Gain);
-        lfo2Gain.connect(pitchDelay2.delayTime);
-        lfo2.start(0);
-        
-        // Tertiary LFO for richness
-        const lfo3 = ctx.createOscillator();
-        lfo3.frequency.value = 7.5; // Fast shimmer
-        lfo3.type = 'sine';
-        const lfo3Gain = ctx.createGain();
-        lfo3Gain.gain.value = 0.008;
-        lfo3.connect(lfo3Gain);
-        lfo3Gain.connect(pitchDelay3.delayTime);
-        lfo3.start(0);
-        
-        // Auto-tune characteristic treble boost (metallic shimmer)
-        const trebleBoost = ctx.createBiquadFilter();
-        trebleBoost.type = 'highshelf';
-        trebleBoost.frequency.value = 4000;
-        trebleBoost.gain.value = 9; // Very strong for auto-tune character
-        
-        // Resonant peak for "earworm" quality (makes it stick in your head)
-        const earwormResonance = ctx.createBiquadFilter();
-        earwormResonance.type = 'peaking';
-        earwormResonance.frequency.value = 5500;
-        earwormResonance.Q.value = 5.0; // High Q for ringing effect
-        earwormResonance.gain.value = 8;
-        
-        // Additional shimmer at 8kHz for air/presence
-        const shimmer = ctx.createBiquadFilter();
-        shimmer.type = 'peaking';
-        shimmer.frequency.value = 8000;
-        shimmer.Q.value = 2.5;
-        shimmer.gain.value = 5;
-        
-        // Extreme compression for auto-tune "locked" sound
+        // Compression
         const compressor = ctx.createDynamicsCompressor();
-        compressor.threshold.value = -35;
-        compressor.knee.value = 50;
-        compressor.ratio.value = 25; // Very aggressive
-        compressor.attack.value = 0.0001; // Nearly instant
-        compressor.release.value = 0.05; // Very quick for pumping effect
+        compressor.threshold.value = -20;
+        compressor.knee.value = 30;
+        compressor.ratio.value = 12;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.25;
         
-        // Gains for mixing
+        // Wet/Dry mix
         const dryGain = ctx.createGain();
-        dryGain.gain.value = 0.4; // Less dry for more effect
+        dryGain.gain.value = 0.3;
         
         const wetGain = ctx.createGain();
-        wetGain.gain.value = 0.6; // More wet for spacey auto-tune
+        wetGain.gain.value = 0.7;
         
-        // Pitch-shifted harmonic layers
-        const pitch1Gain = ctx.createGain();
-        pitch1Gain.gain.value = 0.35;
+        const reverbGain = ctx.createGain();
+        reverbGain.gain.value = 0.3;
         
-        const pitch2Gain = ctx.createGain();
-        pitch2Gain.gain.value = 0.3;
-        
-        const pitch3Gain = ctx.createGain();
-        pitch3Gain.gain.value = 0.25;
-        
-        // Output gain with slight reduction to prevent clipping
+        // Output
         const outputGain = ctx.createGain();
-        outputGain.gain.value = 0.85;
+        outputGain.gain.value = 0.9;
         
-        // Connect the main effect chain
+        // Connect vocoder routing
         source.connect(preGain);
         preGain.connect(highPass);
-        highPass.connect(midBoost);
-        midBoost.connect(harmonizerDistortion);
         
-        // Dry path (clean signal)
-        harmonizerDistortion.connect(dryGain);
+        // Route voice through analysis filters
+        vocoderBands.forEach(({ modFilter, envelope }, i) => {
+            highPass.connect(modFilter);
+            
+            // Connect carrier through its filter
+            carrierMix.connect(carrierBands[i]);
+            
+            // Modulate carrier with voice envelope
+            // (Simplified - direct connection approximates envelope following)
+            modFilter.connect(envelope);
+            carrierBands[i].connect(envelope);
+            envelope.connect(vocoderOut);
+        });
         
-        // Wet path (reverb for space)
-        harmonizerDistortion.connect(convolver);
-        convolver.connect(wetGain);
+        // Dry path
+        highPass.connect(dryGain);
         
-        // Pitch-shifted harmonic layers (auto-tune effect)
-        pitchSources[0].connect(pitchDelay1);
-        pitchDelay1.connect(pitch1Gain);
+        // Wet path (vocoded signal)
+        vocoderOut.connect(presence);
+        presence.connect(shimmer);
+        shimmer.connect(wetGain);
         
-        pitchSources[1].connect(pitchDelay2);
-        pitchDelay2.connect(pitch2Gain);
+        // Reverb path
+        wetGain.connect(convolver);
+        convolver.connect(reverbGain);
         
-        pitchSources[2].connect(pitchDelay3);
-        pitchDelay3.connect(pitch3Gain);
+        // Mix to compressor
+        dryGain.connect(compressor);
+        wetGain.connect(compressor);
+        reverbGain.connect(compressor);
         
-        // Mix all paths into EQ chain
-        dryGain.connect(trebleBoost);
-        wetGain.connect(trebleBoost);
-        pitch1Gain.connect(trebleBoost);
-        pitch2Gain.connect(trebleBoost);
-        pitch3Gain.connect(trebleBoost);
-        
-        // EQ chain for auto-tune character
-        trebleBoost.connect(earwormResonance);
-        earwormResonance.connect(shimmer);
-        shimmer.connect(compressor);
         compressor.connect(outputGain);
         outputGain.connect(ctx.destination);
         
-        // Start all sources at the same time
+        // Start everything
         source.start(0);
-        pitchSources.forEach(ps => ps.start(0));
+        oscillators.forEach(osc => osc.start(0));
         
         return new Promise((resolve) => {
             source.onended = () => {
-                lfo1.stop();
-                lfo2.stop();
-                lfo3.stop();
+                oscillators.forEach(osc => osc.stop());
                 resolve();
             };
         });
