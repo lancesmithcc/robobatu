@@ -872,7 +872,11 @@ font-size: 20vh;
             }
             
             // Normalize to prevent clipping from overlaps
-            const maxVal = Math.max(...outputData.map(Math.abs));
+            let maxVal = 0;
+            for (let i = 0; i < outputLength; i++) {
+                const absVal = Math.abs(outputData[i]);
+                if (absVal > maxVal) maxVal = absVal;
+            }
             if (maxVal > 0) {
                 for (let i = 0; i < outputLength; i++) {
                     outputData[i] /= maxVal * 1.5; // Slight reduction for headroom
