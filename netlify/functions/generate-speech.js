@@ -25,7 +25,7 @@ export default async (req, context) => {
         model: 'model_q8f16',
         // Blend English voice with Japanese voice for unique accent
         // af_heart speaks English, jf_alpha adds Japanese character
-        voice: 'af_heart*0.7+jf_alpha*0.3',
+        voice: 'af_heart*0.3+jf_alpha*0.7',
         input: text,
         response_format: 'mp3',
         speed: 0.85 // Slightly slower for meditative effect

@@ -533,7 +533,7 @@ font-size: 55px;
         const lfo1 = ctx.createOscillator();
         lfo1.frequency.value = 5; // Faster 5 Hz wobble
         const lfo1Gain = ctx.createGain();
-        lfo1Gain.gain.value = 0.008; // Much stronger modulation
+        lfo1Gain.gain.value = 0.002; // Much stronger modulation
         lfo1.connect(lfo1Gain);
         lfo1Gain.connect(chorusDelay1.delayTime);
         lfo1.start(0);
