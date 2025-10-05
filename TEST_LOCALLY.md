@@ -44,12 +44,20 @@ Then visit `http://localhost:8888` and click the **⚡ ACTIVATE** button.
 
 ## Voice ID Reference
 
-Current voice: `ja_alpha` (Japanese Alpha, rated C+)
+Current voice: `jf_alpha` (Japanese Female Alpha, rated C+)
 
 To change voice, edit `netlify/functions/generate-speech.js` line 26:
 ```javascript
-voice: 'ja_alpha', // Try: af_bella, af_sarah, ja_gongitsune, etc.
+voice: 'jf_alpha', // Try: af_bella, af_sarah, jf_gongitsune, jm_kumo, etc.
 ```
+
+Valid voice IDs follow pattern: `[language][gender]_name`
+- `jf_` = Japanese Female
+- `jm_` = Japanese Male
+- `af_` = American Female
+- `am_` = American Male
+- `zf_` = Chinese Female
+- `zm_` = Chinese Male
 
 See all voices at: https://kokoro.lancesmith.cc
 

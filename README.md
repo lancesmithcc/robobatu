@@ -115,9 +115,11 @@ To change the voice or effects, edit:
 
 **Voice settings** in `netlify/functions/generate-speech.js`:
 ```javascript
-voice: 'ja_alpha',  // Japanese Alpha (C+) - Change to any Kokoro voice
+voice: 'jf_alpha',  // Japanese Female Alpha (C+) - Change to any Kokoro voice
 speed: 0.9          // Adjust speed (0.25 - 5.0)
 ```
+
+Available voices include: `jf_alpha`, `jm_kumo`, `af_bella`, `af_sarah`, `am_fenrir`, and more at [kokoro.lancesmith.cc](https://kokoro.lancesmith.cc)
 
 **Audio effects** in `index.html` (search for `applyElectroShift` function):
 - Adjust filter frequencies
