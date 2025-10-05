@@ -259,6 +259,29 @@ font-size: 55px;
         transform: none;
     }
 
+    .activate-btn {
+        font-size: 1.2rem;
+        padding: 1rem 2.5rem;
+        font-weight: 800;
+        letter-spacing: 0.1rem;
+        text-transform: uppercase;
+    }
+
+    .activate-btn.active {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(249, 115, 22, 0.3));
+        border-color: rgba(239, 68, 68, 0.6);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+        }
+        50% {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+        }
+    }
+
     @media (max-width: 768px) {
         h1 {
             font-size: 2.5rem;
@@ -331,11 +354,10 @@ font-size: 55px;
     <div class="card" id="voiceCard">
         <h2>Voice of <span class="highlight">Robobatu</span></h2>
         <div id="currentHaiku" class="haiku" style="margin-bottom: 1.5rem; min-height: 100px;">
-            <span class="haiku-line">Click below to hear...</span>
+            <span class="haiku-line">Ready to share wisdom...</span>
         </div>
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <button id="playBtn" class="voice-btn">🎧 Speak Wisdom</button>
-            <button id="autoPlayBtn" class="voice-btn">♾️ Continuous Flow</button>
+        <div style="display: flex; justify-content: center;">
+            <button id="activateBtn" class="voice-btn activate-btn">⚡ ACTIVATE</button>
         </div>
         <div id="status" style="margin-top: 1rem; text-align: center; font-size: 0.9rem; opacity: 0.7;"></div>
     </div>
@@ -558,14 +580,12 @@ font-size: 55px;
     // === Main Functions ===
 
     async function generateAndPlayHaiku() {
-        const playBtn = document.getElementById('playBtn');
-        const autoPlayBtn = document.getElementById('autoPlayBtn');
+        const activateBtn = document.getElementById('activateBtn');
         const status = document.getElementById('status');
         const haikuDisplay = document.getElementById('currentHaiku');
 
         try {
-            playBtn.disabled = true;
-            autoPlayBtn.disabled = true;
+            activateBtn.disabled = true;
 
             // Generate haiku
             const haiku = generateHaiku();
@@ -584,7 +604,9 @@ font-size: 55px;
             });
 
             if (!response.ok) {
-                throw new Error('Failed to generate speech');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('API Error:', errorData);
+                throw new Error(errorData.details || 'Failed to generate speech');
             }
 
             status.textContent = '🎧 Processing audio...';
@@ -601,7 +623,7 @@ font-size: 55px;
 
             status.textContent = '✨ Complete';
 
-            // If auto-playing, schedule next
+            // If active, schedule next haiku
             if (isAutoPlaying) {
                 autoPlayTimeout = setTimeout(() => {
                     generateAndPlayHaiku();
@@ -610,35 +632,33 @@ font-size: 55px;
 
         } catch (error) {
             console.error('Error:', error);
-            status.textContent = '❌ Error generating voice';
+            status.textContent = `❌ Error: ${error.message}`;
             isAutoPlaying = false;
-            autoPlayBtn.textContent = '♾️ Continuous Flow';
+            activateBtn.classList.remove('active');
+            activateBtn.textContent = '⚡ ACTIVATE';
         } finally {
-            playBtn.disabled = false;
-            autoPlayBtn.disabled = false;
+            activateBtn.disabled = false;
         }
     }
 
     // === Event Listeners ===
 
-    document.getElementById('playBtn').addEventListener('click', () => {
-        if (!isAutoPlaying) {
-            generateAndPlayHaiku();
-        }
-    });
-
-    document.getElementById('autoPlayBtn').addEventListener('click', () => {
-        const btn = document.getElementById('autoPlayBtn');
+    document.getElementById('activateBtn').addEventListener('click', () => {
+        const btn = document.getElementById('activateBtn');
         isAutoPlaying = !isAutoPlaying;
         
         if (isAutoPlaying) {
-            btn.textContent = '⏸️ Pause Flow';
+            btn.classList.add('active');
+            btn.textContent = '⏸ DEACTIVATE';
+            document.getElementById('status').textContent = '';
             generateAndPlayHaiku();
         } else {
-            btn.textContent = '♾️ Continuous Flow';
+            btn.classList.remove('active');
+            btn.textContent = '⚡ ACTIVATE';
             if (autoPlayTimeout) {
                 clearTimeout(autoPlayTimeout);
             }
+            document.getElementById('status').textContent = 'Paused';
         }
     });
 </script>

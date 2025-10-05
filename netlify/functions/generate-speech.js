@@ -23,7 +23,7 @@ export default async (req, context) => {
       },
       body: JSON.stringify({
         model: 'model_q8f16',
-        voice: 'af_alpha', // Japanese Alpha voice
+        voice: 'ja_alpha', // Japanese Alpha voice (C+)
         input: text,
         response_format: 'mp3',
         speed: 0.9 // Slightly slower for meditative effect
@@ -32,8 +32,12 @@ export default async (req, context) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Kokoro API error:', errorText);
-      return new Response(JSON.stringify({ error: 'Failed to generate speech' }), {
+      console.error('Kokoro API error:', response.status, errorText);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to generate speech',
+        details: errorText,
+        status: response.status 
+      }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
