@@ -531,9 +531,9 @@ font-size: 20vh;
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
         
-        // Create synthesizer carrier signal (C Major chord - one octave lower)
-        // Frequencies: C3=130.81Hz, E3=164.81Hz, G3=196Hz, C4=261.63Hz
-        const chordFrequencies = [130.81, 164.81, 196.00, 261.63];
+        // Create synthesizer carrier signal (C Major chord - TWO octaves lower)
+        // Frequencies: C2=65.41Hz, E2=82.41Hz, G2=98Hz, C3=130.81Hz
+        const chordFrequencies = [65.41, 82.41, 98.00, 130.81];
         const oscillators = [];
         
         chordFrequencies.forEach((freq) => {
@@ -543,18 +543,20 @@ font-size: 20vh;
             oscillators.push(osc);
         });
         
-        // Create carrier mixer and ring modulator
-        const carrierGain = ctx.createGain();
-        carrierGain.gain.value = 0.8;
+        // Create carrier mixer
+        const carrierMixer = ctx.createGain();
+        carrierMixer.gain.value = 0;  // Start at 0, will be modulated by voice
         
-        // Connect all oscillators to carrier gain
-        oscillators.forEach(osc => osc.connect(carrierGain));
+        // Connect all oscillators to carrier mixer
+        oscillators.forEach(osc => osc.connect(carrierMixer));
         
-        // Create a simple ring modulator using WaveShaper
-        // This multiplies voice with carrier for true vocoder effect
-        const ringMod = ctx.createWaveShaper();
-        ringMod.curve = makeRingModCurve();
-        ringMod.oversample = '4x';
+        // Create dynamics processor to extract voice envelope
+        const envelopeFollower = ctx.createDynamicsCompressor();
+        envelopeFollower.threshold.value = -50;
+        envelopeFollower.knee.value = 40;
+        envelopeFollower.ratio.value = 12;
+        envelopeFollower.attack.value = 0.0;
+        envelopeFollower.release.value = 0.25;
         
         // Voice processing
         const preGain = ctx.createGain();
@@ -562,7 +564,7 @@ font-size: 20vh;
         
         // Vocoder effect output
         const vocoderGain = ctx.createGain();
-        vocoderGain.gain.value = 1.8;
+        vocoderGain.gain.value = 3.5; // Strong boost for vocoded signal
         
         // High-pass filter
         const highPass = ctx.createBiquadFilter();
@@ -597,10 +599,10 @@ font-size: 20vh;
         
         // Wet/Dry mix - favor vocoded signal
         const dryGain = ctx.createGain();
-        dryGain.gain.value = 0.2;
+        dryGain.gain.value = 0.15; // Less dry voice
         
         const wetGain = ctx.createGain();
-        wetGain.gain.value = 1.2; // Strong vocoder signal
+        wetGain.gain.value = 2.0; // Very strong vocoder signal
         
         const reverbGain = ctx.createGain();
         reverbGain.gain.value = 0.4;
@@ -613,13 +615,13 @@ font-size: 20vh;
         source.connect(preGain);
         preGain.connect(highPass);
         
-        // Voice and carrier both go into ring modulator
-        // This creates the actual vocoder effect by multiplying signals
-        highPass.connect(ringMod);
-        carrierGain.connect(ringMod);
+        // Voice controls the carrier volume (amplitude modulation)
+        // This is the actual vocoder effect!
+        highPass.connect(envelopeFollower);
+        envelopeFollower.connect(carrierMixer.gain); // Voice modulates carrier gain
         
-        // Process vocoded output
-        ringMod.connect(vocoderGain);
+        // Process the modulated carrier
+        carrierMixer.connect(vocoderGain);
         vocoderGain.connect(presence);
         presence.connect(shimmer);
         shimmer.connect(wetGain);
@@ -650,7 +652,7 @@ font-size: 20vh;
                     try {
                         osc.stop();
                     } catch(e) {
-                        // Ignore already stopped
+                        // Already stopped
                     }
                 });
                 resolve();
