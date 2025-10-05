@@ -569,31 +569,45 @@ font-size: 20vh;
         const convolver = ctx.createConvolver();
         convolver.buffer = reverbBuffer;
         
-        // Primary chorus delay (stronger auto-tune shimmer)
-        const chorusDelay1 = ctx.createDelay();
-        chorusDelay1.delayTime.value = 0.025;
+        // Pitch shifter delays for auto-tune effect
+        const pitchDelay1 = ctx.createDelay();
+        pitchDelay1.delayTime.value = 0.01;
         
-        // Secondary chorus delay for thickness
-        const chorusDelay2 = ctx.createDelay();
-        chorusDelay2.delayTime.value = 0.018;
+        const pitchDelay2 = ctx.createDelay();
+        pitchDelay2.delayTime.value = 0.015;
         
-        // Primary LFO for strong chorus modulation (auto-tune warble)
+        const pitchDelay3 = ctx.createDelay();
+        pitchDelay3.delayTime.value = 0.02;
+        
+        // Musical LFO for auto-tune wobble (synced to musical intervals)
         const lfo1 = ctx.createOscillator();
-        lfo1.frequency.value = 5; // Faster 5 Hz wobble
+        lfo1.frequency.value = 6; // 6 Hz for T-Pain style wobble
+        lfo1.type = 'sine';
         const lfo1Gain = ctx.createGain();
-        lfo1Gain.gain.value = 0.002; // Much stronger modulation
+        lfo1Gain.gain.value = 0.012; // Strong pitch modulation
         lfo1.connect(lfo1Gain);
-        lfo1Gain.connect(chorusDelay1.delayTime);
+        lfo1Gain.connect(pitchDelay1.delayTime);
         lfo1.start(0);
         
-        // Secondary LFO for extra shimmer
+        // Secondary musical LFO (harmony)
         const lfo2 = ctx.createOscillator();
-        lfo2.frequency.value = 3.7; // Slightly different rate for complexity
+        lfo2.frequency.value = 4.5; // Different rate for complexity
+        lfo2.type = 'triangle';
         const lfo2Gain = ctx.createGain();
-        lfo2Gain.gain.value = 0.006;
+        lfo2Gain.gain.value = 0.01;
         lfo2.connect(lfo2Gain);
-        lfo2Gain.connect(chorusDelay2.delayTime);
+        lfo2Gain.connect(pitchDelay2.delayTime);
         lfo2.start(0);
+        
+        // Tertiary LFO for richness
+        const lfo3 = ctx.createOscillator();
+        lfo3.frequency.value = 7.5; // Fast shimmer
+        lfo3.type = 'sine';
+        const lfo3Gain = ctx.createGain();
+        lfo3Gain.gain.value = 0.008;
+        lfo3.connect(lfo3Gain);
+        lfo3Gain.connect(pitchDelay3.delayTime);
+        lfo3.start(0);
         
         // Auto-tune characteristic treble boost (metallic shimmer)
         const trebleBoost = ctx.createBiquadFilter();
