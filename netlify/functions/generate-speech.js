@@ -23,7 +23,7 @@ export default async (req, context) => {
       },
       body: JSON.stringify({
         model: 'model_q8f16',
-        voice: 'ja_alpha', // Japanese Alpha voice (C+)
+        voice: 'jf_alpha', // Japanese Female Alpha voice (C+)
         input: text,
         response_format: 'mp3',
         speed: 0.9 // Slightly slower for meditative effect
