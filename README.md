@@ -7,10 +7,10 @@ A peaceful AI companion that speaks wisdom through generated haikus with a robot
 ## Features
 
 - 🎨 Beautiful gradient-animated braille background
-- 🎭 Dynamic haiku generation in Robobatu's unique voice
+- 🎭 Dynamic haiku generation in Robobatu's unique voice with double-word emphasis
 - 🎵 Text-to-speech using [Kokoro TTS](https://kokoro.lancesmith.cc) with Japanese Alpha voice
 - 🎚️ Web Audio API "electro shift" voice filter for robotic effect
-- ♾️ Continuous mode for endless wisdom flow
+- ⚡ One-button ACTIVATE system for continuous wisdom flow
 - 📱 Fully responsive design
 
 ## Deployment on Netlify
@@ -115,7 +115,7 @@ To change the voice or effects, edit:
 
 **Voice settings** in `netlify/functions/generate-speech.js`:
 ```javascript
-voice: 'af_alpha',  // Change to any Kokoro voice
+voice: 'ja_alpha',  // Japanese Alpha (C+) - Change to any Kokoro voice
 speed: 0.9          // Adjust speed (0.25 - 5.0)
 ```
 
