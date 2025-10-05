@@ -8,7 +8,7 @@ A peaceful AI companion that speaks wisdom through generated haikus with a robot
 
 - 🎨 Beautiful gradient-animated braille background
 - 🎭 Dynamic haiku generation in Robobatu's unique voice with double-word emphasis
-- 🎵 Text-to-speech using [Kokoro TTS](https://kokoro.lancesmith.cc) with Bella voice
+- 🎵 Text-to-speech using [Kokoro TTS](https://kokoro.lancesmith.cc) with Japanese Alpha voice speaking English (US)
 - 🎚️ Web Audio API harmonic auto-tune effect for ethereal robotic voice
 - ⚡ One-button ACTIVATE system for continuous wisdom flow
 - 📱 Fully responsive design
@@ -86,7 +86,7 @@ Robobatu generates haikus using templates that follow the signature style:
 
 ### Voice Processing
 1. Frontend generates a haiku
-2. Netlify function calls Kokoro API with American Female Bella voice (A- rated)
+2. Netlify function calls Kokoro API with Japanese Female Alpha voice (C+) using English (US) accent
 3. Audio is returned and processed through Web Audio API
 4. Harmonic auto-tune effect chain applies:
    - Parametric EQ for vocal presence
@@ -116,11 +116,14 @@ To change the voice or effects, edit:
 
 **Voice settings** in `netlify/functions/generate-speech.js`:
 ```javascript
-voice: 'af_bella',  // American Female Bella (A-) - Change to any Kokoro voice
-speed: 0.85         // Adjust speed (0.25 - 5.0)
+voice: 'jf_alpha',  // Japanese Female Alpha (C+)
+speed: 0.85,        // Adjust speed (0.25 - 5.0)
+language: 'en-us'   // Force English (US) pronunciation
 ```
 
-Available voices include: `af_bella`, `af_heart`, `af_sarah`, `am_fenrir`, and more at [kokoro.lancesmith.cc](https://kokoro.lancesmith.cc)
+You can change the language accent to: `en-us`, `en-gb`, `ja`, `zh`, `es`, `hi`, `it`, or `pt-br`
+
+Available voices include: `jf_alpha`, `af_bella`, `af_heart`, `af_sarah`, `am_fenrir`, and more at [kokoro.lancesmith.cc](https://kokoro.lancesmith.cc)
 
 **Audio effects** in `index.html` (search for `applyHarmonicEffect` function):
 - Adjust reverb depth (wet/dry mix)
