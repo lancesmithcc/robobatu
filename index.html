@@ -621,22 +621,27 @@ font-size: 20vh;
         // Create reverb
         const reverbBuffer = createReverbImpulse(ctx);
         
-        // Create 3-voice harmony with minimal speed change
+        // Create 3-voice harmony - pitch shift without speed change
         // Main voice: normal pitch (loudest, clearest)
-        // Voice 2: +5 semitones (major third above, subtle)
-        // Voice 3: +7 semitones (perfect fifth above, subtle)
+        // Voice 2: +4 semitones (major third, subtle)
+        // Voice 3: +7 semitones (perfect fifth, subtle)
+        
+        // Pitch shift factors (semitone formula: 2^(semitones/12))
+        const pitchShift1 = Math.pow(2, 4/12); // +4 semitones ≈ 1.26
+        const pitchShift2 = Math.pow(2, 7/12); // +7 semitones ≈ 1.498
+        
+        // Create pitch-shifted buffers (same speed, different pitch)
+        const bufferHigh1 = pitchShiftBuffer(ctx, audioBuffer, pitchShift1);
+        const bufferHigh2 = pitchShiftBuffer(ctx, audioBuffer, pitchShift2);
         
         const voiceMain = ctx.createBufferSource();
-        voiceMain.buffer = audioBuffer;
-        voiceMain.playbackRate.value = 1.0; // Original pitch and speed
+        voiceMain.buffer = audioBuffer; // Original
         
         const voiceHigh1 = ctx.createBufferSource();
-        voiceHigh1.buffer = audioBuffer;
-        voiceHigh1.playbackRate.value = 1.26; // +5 semitones (major third)
+        voiceHigh1.buffer = bufferHigh1; // Pitch shifted up
         
         const voiceHigh2 = ctx.createBufferSource();
-        voiceHigh2.buffer = audioBuffer;
-        voiceHigh2.playbackRate.value = 1.498; // +7 semitones (perfect fifth)
+        voiceHigh2.buffer = bufferHigh2; // Pitch shifted up more
         
         // Mix gains - main voice prominent, harmonics subtle
         const gainMain = ctx.createGain();
@@ -819,6 +824,63 @@ font-size: 20vh;
         }
         
         return impulse;
+    }
+    
+    // Pitch shift audio buffer without changing speed (using granular synthesis)
+    function pitchShiftBuffer(ctx, buffer, pitchShift) {
+        // pitchShift: 1.0 = no change, 1.5 = +7 semitones (perfect fifth), etc.
+        const sampleRate = ctx.sampleRate;
+        const channels = buffer.numberOfChannels;
+        const outputLength = buffer.length;
+        
+        // Create new buffer for pitch-shifted audio
+        const shiftedBuffer = ctx.createBuffer(channels, outputLength, sampleRate);
+        
+        // Process each channel
+        for (let channel = 0; channel < channels; channel++) {
+            const inputData = buffer.getChannelData(channel);
+            const outputData = shiftedBuffer.getChannelData(channel);
+            
+            // Granular synthesis parameters
+            const grainSize = 2048; // Size of each grain
+            const hopSize = Math.floor(grainSize / 2); // 50% overlap
+            
+            // Read position increments faster/slower for pitch shift
+            let readPos = 0;
+            const readIncrement = pitchShift;
+            
+            // Process in overlapping grains
+            for (let writePos = 0; writePos < outputLength - grainSize; writePos += hopSize) {
+                // Apply windowing (Hann window) to avoid clicks
+                for (let i = 0; i < grainSize; i++) {
+                    const readIndex = Math.floor(readPos + i * readIncrement);
+                    
+                    if (readIndex >= 0 && readIndex < inputData.length) {
+                        // Hann window
+                        const window = 0.5 * (1 - Math.cos(2 * Math.PI * i / grainSize));
+                        const sample = inputData[readIndex] * window;
+                        
+                        // Overlap-add
+                        if (writePos + i < outputLength) {
+                            outputData[writePos + i] += sample;
+                        }
+                    }
+                }
+                
+                // Move read position forward at normal speed
+                readPos += hopSize;
+            }
+            
+            // Normalize to prevent clipping from overlaps
+            const maxVal = Math.max(...outputData.map(Math.abs));
+            if (maxVal > 0) {
+                for (let i = 0; i < outputLength; i++) {
+                    outputData[i] /= maxVal * 1.5; // Slight reduction for headroom
+                }
+            }
+        }
+        
+        return shiftedBuffer;
     }
 
     // === Main Functions ===
