@@ -471,6 +471,13 @@ font-size: 20vh;
     let isAutoPlaying = false;
     let autoPlayTimeout = null;
     let animationInterval = null;
+    
+    // Continuous audio nodes (carrier + binaural)
+    let carrierSource = null;
+    let binauralLeft = null;
+    let binauralRight = null;
+    let chorusLFO = null;
+    let continuousNodesStarted = false;
 
     function getAudioContext() {
         if (!audioContext) {
@@ -850,13 +857,18 @@ font-size: 20vh;
 
     // === Event Listeners ===
 
-    document.getElementById('activateBtn').addEventListener('click', () => {
+    document.getElementById('activateBtn').addEventListener('click', async () => {
         const btn = document.getElementById('activateBtn');
         isAutoPlaying = !isAutoPlaying;
         
         if (isAutoPlaying) {
             btn.classList.add('active');
             btn.textContent = '⏸ DEACTIVATE';
+            document.getElementById('status').textContent = '🎵 Starting continuous audio...';
+            
+            // Start continuous carrier and binaural beat
+            await startContinuousAudio();
+            
             document.getElementById('status').textContent = '';
             generateAndPlayHaiku();
         } else {
@@ -865,7 +877,10 @@ font-size: 20vh;
             if (autoPlayTimeout) {
                 clearTimeout(autoPlayTimeout);
             }
-            stopRobotAnimation(); // Stop animation when deactivated
+            
+            // Stop continuous audio
+            stopContinuousAudio();
+            stopRobotAnimation();
             document.getElementById('status').textContent = 'Paused';
         }
     });
