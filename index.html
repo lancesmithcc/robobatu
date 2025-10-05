@@ -638,26 +638,26 @@ font-size: 20vh;
         const sampleRateReducer = ctx.createWaveShaper();
         sampleRateReducer.curve = makeSteppedCurve(32); // Stepped quantization
         
-        // Chorus effect (stronger)
+        // Gentle chorus for subtle robot shimmer (no pitch bending)
         const chorusDelay = ctx.createDelay();
-        chorusDelay.delayTime.value = 0.03;
+        chorusDelay.delayTime.value = 0.015; // Shorter delay
         
         // Create chorus LFO if not already running
         if (!chorusLFO) {
             chorusLFO = ctx.createOscillator();
-            chorusLFO.frequency.value = 2.5; // Faster wobble
+            chorusLFO.frequency.value = 0.8; // Slow, gentle wobble
             chorusLFO.type = 'sine';
             chorusLFO.start(0);
         }
         
         const chorusDepth = ctx.createGain();
-        chorusDepth.gain.value = 0.015; // Much stronger modulation
+        chorusDepth.gain.value = 0.002; // Minimal modulation - just shimmer
         
         chorusLFO.connect(chorusDepth);
         chorusDepth.connect(chorusDelay.delayTime);
         
         const chorusGain = ctx.createGain();
-        chorusGain.gain.value = 0.8; // Louder chorus mix
+        chorusGain.gain.value = 0.5; // Balanced mix
         
         // Vocoded output
         const vocoderGain = ctx.createGain();
