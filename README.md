@@ -8,8 +8,9 @@ A peaceful AI companion that speaks wisdom through generated haikus with a robot
 
 - 🎨 Beautiful gradient-animated braille background
 - 🎭 Dynamic haiku generation in Robobatu's unique voice with double-word emphasis
-- 🎵 Text-to-speech using [Kokoro TTS](https://kokoro.lancesmith.cc) with Japanese Alpha voice speaking English (US)
+- 🎵 Text-to-speech using [Kokoro TTS](https://kokoro.lancesmith.cc) with blended voice (Heart + Japanese Alpha)
 - 🎚️ Web Audio API harmonic auto-tune effect for ethereal robotic voice
+- 🤖 Animated ASCII robot that blinks and talks while speaking
 - ⚡ One-button ACTIVATE system for continuous wisdom flow
 - 📱 Fully responsive design
 
