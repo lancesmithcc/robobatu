@@ -23,10 +23,11 @@ export default async (req, context) => {
       },
       body: JSON.stringify({
         model: 'model_q8f16',
-        voice: 'af_bella', // American Female Bella voice (A-) - speaks English naturally
+        voice: 'jf_alpha', // Japanese Female Alpha (C+) with English accent
         input: text,
         response_format: 'mp3',
-        speed: 0.85 // Slightly slower for meditative effect
+        speed: 0.85, // Slightly slower for meditative effect
+        language: 'en-us' // Force English (US) pronunciation
       })
     });
 
