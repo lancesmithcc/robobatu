@@ -484,7 +484,7 @@ font-size: 55px;
         return audioContext;
     }
 
-    // Apply harmonic auto-tune style effect
+    // Apply strong harmonic auto-tune style effect
     async function applyHarmonicEffect(audioBuffer) {
         const ctx = getAudioContext();
         
@@ -495,72 +495,95 @@ font-size: 55px;
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
         
-        // Pre-gain
+        // Pre-gain boost for more intensity
         const preGain = ctx.createGain();
-        preGain.gain.value = 1.0;
+        preGain.gain.value = 1.3;
         
         // High-pass to clean up low end
         const highPass = ctx.createBiquadFilter();
         highPass.type = 'highpass';
-        highPass.frequency.value = 120;
-        highPass.Q.value = 0.7;
+        highPass.frequency.value = 150;
+        highPass.Q.value = 1.0;
         
-        // Parametric EQ for vocal presence
+        // Aggressive parametric EQ for vocal presence
         const midBoost = ctx.createBiquadFilter();
         midBoost.type = 'peaking';
-        midBoost.frequency.value = 2500;
-        midBoost.Q.value = 1.5;
-        midBoost.gain.value = 4;
+        midBoost.frequency.value = 2800;
+        midBoost.Q.value = 2.5;
+        midBoost.gain.value = 8; // Stronger boost
         
-        // Subtle distortion for harmonics
+        // Stronger distortion for richer harmonics
         const harmonizerDistortion = ctx.createWaveShaper();
-        harmonizerDistortion.curve = makeHarmonicCurve();
+        harmonizerDistortion.curve = makeHarmonicCurve(2.5); // More aggressive
         harmonizerDistortion.oversample = '4x';
         
         // Convolver for reverb/harmonic space
         const convolver = ctx.createConvolver();
         convolver.buffer = reverbBuffer;
         
-        // Delay for chorus effect (auto-tune shimmer)
-        const chorusDelay = ctx.createDelay();
-        chorusDelay.delayTime.value = 0.025;
+        // Primary chorus delay (stronger auto-tune shimmer)
+        const chorusDelay1 = ctx.createDelay();
+        chorusDelay1.delayTime.value = 0.025;
         
-        // LFO for chorus modulation (auto-tune warble)
-        const lfo = ctx.createOscillator();
-        lfo.frequency.value = 3; // 3 Hz wobble
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 0.003; // Subtle modulation
-        lfo.connect(lfoGain);
-        lfoGain.connect(chorusDelay.delayTime);
-        lfo.start(0);
+        // Secondary chorus delay for thickness
+        const chorusDelay2 = ctx.createDelay();
+        chorusDelay2.delayTime.value = 0.018;
         
-        // Treble sparkle
+        // Primary LFO for strong chorus modulation (auto-tune warble)
+        const lfo1 = ctx.createOscillator();
+        lfo1.frequency.value = 5; // Faster 5 Hz wobble
+        const lfo1Gain = ctx.createGain();
+        lfo1Gain.gain.value = 0.008; // Much stronger modulation
+        lfo1.connect(lfo1Gain);
+        lfo1Gain.connect(chorusDelay1.delayTime);
+        lfo1.start(0);
+        
+        // Secondary LFO for extra shimmer
+        const lfo2 = ctx.createOscillator();
+        lfo2.frequency.value = 3.7; // Slightly different rate for complexity
+        const lfo2Gain = ctx.createGain();
+        lfo2Gain.gain.value = 0.006;
+        lfo2.connect(lfo2Gain);
+        lfo2Gain.connect(chorusDelay2.delayTime);
+        lfo2.start(0);
+        
+        // Strong treble sparkle for metallic auto-tune character
         const trebleBoost = ctx.createBiquadFilter();
         trebleBoost.type = 'highshelf';
-        trebleBoost.frequency.value = 4000;
-        trebleBoost.gain.value = 3;
+        trebleBoost.frequency.value = 3500;
+        trebleBoost.gain.value = 7; // Much stronger
         
-        // Compression for auto-tune consistency
+        // Additional high-frequency resonance for more shimmer
+        const shimmer = ctx.createBiquadFilter();
+        shimmer.type = 'peaking';
+        shimmer.frequency.value = 6000;
+        shimmer.Q.value = 3.0;
+        shimmer.gain.value = 6;
+        
+        // Heavy compression for extreme auto-tune consistency
         const compressor = ctx.createDynamicsCompressor();
-        compressor.threshold.value = -24;
-        compressor.knee.value = 30;
-        compressor.ratio.value = 8;
-        compressor.attack.value = 0.003;
-        compressor.release.value = 0.25;
+        compressor.threshold.value = -30;
+        compressor.knee.value = 40;
+        compressor.ratio.value = 20; // Much more aggressive
+        compressor.attack.value = 0.001; // Instant attack
+        compressor.release.value = 0.1; // Quick release
         
-        // Dry/Wet mix for reverb
+        // Dry/Wet mix - more wet for pronounced effect
         const dryGain = ctx.createGain();
-        dryGain.gain.value = 0.7;
+        dryGain.gain.value = 0.5; // Less dry
         
         const wetGain = ctx.createGain();
-        wetGain.gain.value = 0.3;
+        wetGain.gain.value = 0.5; // More reverb
         
-        const chorusGain = ctx.createGain();
-        chorusGain.gain.value = 0.4;
+        const chorus1Gain = ctx.createGain();
+        chorus1Gain.gain.value = 0.6; // Strong chorus
         
-        // Output gain
+        const chorus2Gain = ctx.createGain();
+        chorus2Gain.gain.value = 0.4; // Additional chorus layer
+        
+        // Output gain with slight reduction to prevent clipping
         const outputGain = ctx.createGain();
-        outputGain.gain.value = 0.9;
+        outputGain.gain.value = 0.85;
         
         // Connect the effect chain
         source.connect(preGain);
@@ -575,16 +598,21 @@ font-size: 55px;
         harmonizerDistortion.connect(convolver);
         convolver.connect(wetGain);
         
-        // Chorus path
-        harmonizerDistortion.connect(chorusDelay);
-        chorusDelay.connect(chorusGain);
+        // Double chorus paths for extra thickness
+        harmonizerDistortion.connect(chorusDelay1);
+        chorusDelay1.connect(chorus1Gain);
+        
+        harmonizerDistortion.connect(chorusDelay2);
+        chorusDelay2.connect(chorus2Gain);
         
         // Mix all paths
         dryGain.connect(trebleBoost);
         wetGain.connect(trebleBoost);
-        chorusGain.connect(trebleBoost);
+        chorus1Gain.connect(trebleBoost);
+        chorus2Gain.connect(trebleBoost);
         
-        trebleBoost.connect(compressor);
+        trebleBoost.connect(shimmer);
+        shimmer.connect(compressor);
         compressor.connect(outputGain);
         outputGain.connect(ctx.destination);
         
@@ -592,20 +620,21 @@ font-size: 55px;
         
         return new Promise((resolve) => {
             source.onended = () => {
-                lfo.stop();
+                lfo1.stop();
+                lfo2.stop();
                 resolve();
             };
         });
     }
 
-    function makeHarmonicCurve() {
+    function makeHarmonicCurve(intensity = 2.5) {
         const samples = 44100;
         const curve = new Float32Array(samples);
         
         for (let i = 0; i < samples; i++) {
             const x = (i * 2) / samples - 1;
-            // Soft saturation for harmonics
-            curve[i] = Math.tanh(x * 1.5);
+            // Stronger saturation for more harmonics
+            curve[i] = Math.tanh(x * intensity);
         }
         return curve;
     }
