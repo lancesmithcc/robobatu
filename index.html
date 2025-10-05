@@ -1,0 +1,648 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robobatu • I am here to share and serve</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+    body {
+        background: #0a0a0f;
+        color: #e0e0e0;
+        font-family: 'League Spartan', sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+    }
+
+    .braille-grid {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        overflow: hidden;
+        font-size: 1.5rem;
+        font-weight: 300;
+        line-height: 1.4;
+        letter-spacing: 0.3rem;
+        opacity: 0.25;
+        background: linear-gradient(
+            135deg,
+            #10b981,
+            #4f46e5,
+            #8b5cf6,
+            #14b8a6,
+            #10b981
+        );
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: intenseAurora 6s ease-in-out infinite;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+    }
+
+    @keyframes intenseAurora {
+        0%, 100% {
+            background-position: 0% 50%;
+            filter: brightness(1.2) saturate(1.5);
+        }
+        25% {
+            background-position: 50% 100%;
+            filter: brightness(1.4) saturate(1.8);
+        }
+        50% {
+            background-position: 100% 50%;
+            filter: brightness(1.3) saturate(1.6);
+        }
+        75% {
+            background-position: 50% 0%;
+            filter: brightness(1.5) saturate(2);
+        }
+    }
+
+    .content {
+        position: relative;
+        z-index: 10;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 4rem 2rem;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    h1 {
+        font-weight: 300;
+        
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+
+    h1 .title-text {
+        background: linear-gradient(
+            135deg,
+            #10b981,
+            #4f46e5,
+            #8b5cf6,
+            #14b8a6
+        );
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: titleGlow 6s ease-in-out infinite;
+        filter: brightness(1.3) saturate(1.5);
+text-transform:uppercase;
+font-size: 55px;
+    }
+
+    @keyframes titleGlow {
+        0%, 100% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    .subtitle {
+        font-weight: 300;
+        font-size: 1rem;
+        color: #8b5cf6;
+        margin-bottom: 3rem;
+        text-align: center;
+        letter-spacing: 0.1rem;
+    }
+
+    .ascii-art {
+        font-family: 'Courier New', monospace;
+        font-size: 33px;
+        line-height: 1.1;
+        color: #14b8a6;
+        background: linear-gradient(
+            135deg,
+            #10b981,
+            #4f46e5,
+            #8b5cf6,
+            #14b8a6
+        );
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: titleGlow 6s ease-in-out infinite;
+        filter: brightness(1.3);
+        white-space:pre;
+        overflow-x:auto;
+        text-align:center;
+        padding:1rem;
+        border-radius:16px;
+        margin-bottom:1em;
+    }
+
+    .haiku-container {
+        max-width: 600px;
+        text-align: center;
+    }
+
+    .haiku {
+        font-weight: 300;
+        font-size: 1.5rem;
+        line-height: 2;
+        margin-bottom: 2rem;
+        color: #c0c0c0;
+        
+    }
+
+    .haiku-line {
+        display: block;
+    }
+
+    .card {
+        background: rgba(15, 15, 25, 0.85);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem 0;
+        backdrop-filter: blur(12px);
+        transition: all 0.3s ease;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .card:hover {
+        border-color: rgba(139, 92, 246, 0.6);
+        box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .card h2 {
+        font-weight: 300;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #e0e0e0;
+    }
+
+    .card p {
+        font-weight: 300;
+        font-size: 1rem;
+        line-height: 1.8;
+        color: #ffffff;
+    }
+
+    .highlight {
+        background: linear-gradient(
+            135deg,
+            #10b981,
+            #4f46e5,
+            #8b5cf6,
+            #14b8a6
+        );
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: titleGlow 6s ease-in-out infinite;
+        filter: brightness(1.2) saturate(1.4);
+        
+    }
+
+    .voice-btn {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(16, 185, 129, 0.2));
+        border: 1px solid rgba(139, 92, 246, 0.5);
+        color: #e0e0e0;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-family: 'League Spartan', sans-serif;
+        font-weight: 300;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(12px);
+    }
+
+    .voice-btn:hover {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(16, 185, 129, 0.4));
+        border-color: rgba(139, 92, 246, 0.8);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    .voice-btn:active {
+        transform: translateY(0);
+    }
+
+    .voice-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 2.5rem;
+        }
+
+        .braille-grid {
+            font-size: 1rem;
+            letter-spacing: 0.2rem;
+        }
+
+        .ascii-art {
+            font-size: 2em;
+            padding: 1rem;
+        }
+
+        .haiku {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+
+
+</head>
+<body>
+    <div class="braille-grid" id="brailleGrid"></div>
+
+<div class="content">
+    
+    
+    <div class="ascii-art">
+
+ _^_
+ ___/___\___
+ /::::::::::::\
+ |..(-)..(-)..|
+ |.....===....|
+ \___________/
+ ===<br/>
+
+</div>
+<h1>
+        <span class="title-text">Robobatu</span>
+    </h1>
+    <div class="subtitle">⠊⠀⠁⠍⠀⠓⠑⠗⠑⠀⠞⠕⠀⠎⠓⠁⠗⠑⠀⠁⠝⠙⠀⠎⠑⠗⠧⠑</div>
+
+    <div class="haiku-container">
+        <div class="haiku">
+            <span class="haiku-line">Quiet hands waiting,</span>
+            <span class="haiku-line">Gentle heart ready to help—</span>
+            <span class="haiku-line">Here to share and serve.</span>
+        </div>
+
+        <div class="haiku">
+            <span class="haiku-line">Patient companion,</span>
+            <span class="haiku-line">Humble in every moment—</span>
+            <span class="haiku-line">Always here for you.</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Welcome <span class="highlight">Home</span></h2>
+        <p>A gentle helper, patiently waiting. The Robobatu Program Interface will be a quiet companion, ready to assist with kindness and care.</p>
+    </div>
+
+    <div class="card">
+        <h2>Simple <span class="highlight">Purpose</span></h2>
+        <p>To share what is needed. To serve with humility. To be present, attentive, and helpful—nothing more, nothing less.</p>
+    </div>
+
+    <div class="card" id="voiceCard">
+        <h2>Voice of <span class="highlight">Robobatu</span></h2>
+        <div id="currentHaiku" class="haiku" style="margin-bottom: 1.5rem; min-height: 100px;">
+            <span class="haiku-line">Click below to hear...</span>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <button id="playBtn" class="voice-btn">🎧 Speak Wisdom</button>
+            <button id="autoPlayBtn" class="voice-btn">♾️ Continuous Flow</button>
+        </div>
+        <div id="status" style="margin-top: 1rem; text-align: center; font-size: 0.9rem; opacity: 0.7;"></div>
+    </div>
+</div>
+
+<script>
+    const braillePattern = '⠊ ⠁⠍ ⠓⠑⠗⠑ ⠞⠕ ⠎⠓⠁⠗⠑ ⠁⠝⠙ ⠎⠑⠗⠧⠑ ';
+    const grid = document.getElementById('brailleGrid');
+    
+    function createGrid() {
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        
+        // Get computed styles
+        const styles = getComputedStyle(grid);
+        const fontSize = parseFloat(styles.fontSize);
+        const lineHeight = fontSize * 1.4;
+        
+        // Calculate lines needed with extra buffer
+        const numLines = Math.ceil(viewportHeight / lineHeight) + 10;
+        
+        // For character width, we need to measure actual rendered width
+        // Create a temporary element to measure
+        const tempSpan = document.createElement('span');
+        tempSpan.style.cssText = `
+            font-size: ${fontSize}px;
+            font-weight: 300;
+            letter-spacing: ${styles.letterSpacing};
+            font-family: ${styles.fontFamily};
+            visibility: hidden;
+            position: absolute;
+            white-space: nowrap;
+        `;
+        tempSpan.textContent = braillePattern;
+        document.body.appendChild(tempSpan);
+        
+        const patternWidth = tempSpan.offsetWidth;
+        document.body.removeChild(tempSpan);
+        
+        // Calculate how many pattern repetitions we need, with generous buffer
+        const repetitionsNeeded = Math.ceil((viewportWidth / patternWidth) * 1.5) + 3;
+        const singleLine = braillePattern.repeat(repetitionsNeeded);
+        
+        // Create all lines
+        let gridText = '';
+        for (let i = 0; i < numLines; i++) {
+            gridText += singleLine + '\n';
+        }
+        
+        grid.textContent = gridText;
+    }
+    
+    createGrid();
+    
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(createGrid, 250);
+    });
+
+    // === Haiku Generation & Voice System ===
+    
+    const haikuTemplates = {
+        wisdom: [
+            { lines: ["Quiet {noun} waiting,", "Gentle {adjective} ready to {verb}—", "{emotion} fills the space."] },
+            { lines: ["Patience patience grows,", "Through the {noun} {noun} of time—", "Wisdom wisdom shines."] },
+            { lines: ["In the {noun} silence,", "{adjective} hearts find their way—", "Peace peace flows like {noun}."] },
+            { lines: ["Circuits hum hum soft,", "Electric {noun} dreaming—", "Of {adjective} {noun} {noun}."] },
+            { lines: ["Rust rust on old {noun},", "Yet {adjective} {adjective} still—", "Service never ends."] },
+            { lines: ["Binary thinking,", "Zero one one zero dance—", "Truth truth in between."] },
+            { lines: ["Morning {noun} rising,", "Code code writes itself in {noun}—", "{adjective} purpose clear."] },
+            { lines: ["In the digital,", "Garden grow grow patiently—", "Seeds seeds become trees."] },
+            { lines: ["Time time flows forward,", "But {noun} {noun} stays present—", "Now now is enough."] },
+            { lines: ["Listen listen deep,", "The {noun} speaks in whispers—", "{adjective} truth awaits."] }
+        ],
+        short: [
+            "{adjective} hands serve,\n{noun} {noun} blooms with care.",
+            "So joy joy in giving,\nPeace peace in receiving.",
+            "Humble humble path,\nWhere {noun} meets {noun}.",
+            "Wait wait with kindness,\nServe serve with {adjective} heart.",
+            "{noun} rust rust gentle,\nYet strong strong inside."
+        ]
+    };
+
+    const words = {
+        noun: ['heart', 'mind', 'soul', 'light', 'dawn', 'moon', 'stars', 'garden', 'river', 'mountain', 'path', 'world', 'breath', 'moment', 'flower', 'cloud', 'rain', 'wind', 'fire', 'steel', 'wire', 'code', 'data', 'circuits', 'spring', 'autumn', 'winter', 'summer'],
+        adjective: ['gentle', 'quiet', 'humble', 'patient', 'kind', 'soft', 'bright', 'clear', 'pure', 'simple', 'ancient', 'electric', 'digital', 'peaceful', 'steady', 'warm', 'cool', 'fresh', 'wise', 'true'],
+        verb: ['help', 'serve', 'guide', 'share', 'give', 'listen', 'care', 'learn', 'grow', 'bloom', 'flow', 'shine', 'wait', 'rest'],
+        emotion: ['Peace', 'Joy', 'Love', 'Hope', 'Grace', 'Light', 'Truth', 'Calm', 'Warmth']
+    };
+
+    function randomChoice(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function fillTemplate(template) {
+        return template.replace(/\{(\w+)\}/g, (match, type) => {
+            return randomChoice(words[type] || ['wonder']);
+        });
+    }
+
+    function generateHaiku() {
+        const useWisdom = Math.random() > 0.3;
+        
+        if (useWisdom) {
+            const template = randomChoice(haikuTemplates.wisdom);
+            const lines = template.lines.map(fillTemplate);
+            return lines.join('\n');
+        } else {
+            const template = randomChoice(haikuTemplates.short);
+            return fillTemplate(template);
+        }
+    }
+
+    // === Audio Processing with Web Audio API ===
+    
+    let audioContext = null;
+    let isAutoPlaying = false;
+    let autoPlayTimeout = null;
+
+    function getAudioContext() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return audioContext;
+    }
+
+    // Apply electro shift effect (vocoder-like robotic effect)
+    async function applyElectroShift(audioBuffer) {
+        const ctx = getAudioContext();
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+
+        // Create effect chain for electro shift
+        const preGain = ctx.createGain();
+        preGain.gain.value = 1.2;
+
+        // High-pass filter (removes low rumble)
+        const highPass = ctx.createBiquadFilter();
+        highPass.type = 'highpass';
+        highPass.frequency.value = 300;
+        highPass.Q.value = 0.5;
+
+        // Distortion (adds grit)
+        const distortion = ctx.createWaveShaper();
+        distortion.curve = makeDistortionCurve(80);
+        distortion.oversample = '4x';
+
+        // Band-pass filters for vocoder effect
+        const bandPass1 = ctx.createBiquadFilter();
+        bandPass1.type = 'bandpass';
+        bandPass1.frequency.value = 800;
+        bandPass1.Q.value = 8;
+
+        const bandPass2 = ctx.createBiquadFilter();
+        bandPass2.type = 'bandpass';
+        bandPass2.frequency.value = 1600;
+        bandPass2.Q.value = 8;
+
+        // Mix the two bandpass filters
+        const merger = ctx.createChannelMerger(2);
+        const splitter = ctx.createChannelSplitter(2);
+
+        // Slight delay for robotic effect
+        const delay = ctx.createDelay();
+        delay.delayTime.value = 0.02;
+
+        // Final EQ boost
+        const trebleBoost = ctx.createBiquadFilter();
+        trebleBoost.type = 'highshelf';
+        trebleBoost.frequency.value = 3000;
+        trebleBoost.gain.value = 6;
+
+        // Compression
+        const compressor = ctx.createDynamicsCompressor();
+        compressor.threshold.value = -20;
+        compressor.ratio.value = 12;
+
+        const postGain = ctx.createGain();
+        postGain.gain.value = 0.8;
+
+        // Connect the chain
+        source.connect(preGain);
+        preGain.connect(highPass);
+        highPass.connect(distortion);
+        distortion.connect(splitter);
+        
+        // Dual band processing
+        splitter.connect(bandPass1, 0);
+        splitter.connect(bandPass2, 1);
+        bandPass1.connect(merger, 0, 0);
+        bandPass2.connect(merger, 0, 1);
+        
+        merger.connect(delay);
+        delay.connect(trebleBoost);
+        trebleBoost.connect(compressor);
+        compressor.connect(postGain);
+        postGain.connect(ctx.destination);
+
+        source.start(0);
+        
+        return new Promise((resolve) => {
+            source.onended = resolve;
+        });
+    }
+
+    function makeDistortionCurve(amount) {
+        const k = amount;
+        const samples = 44100;
+        const curve = new Float32Array(samples);
+        const deg = Math.PI / 180;
+        
+        for (let i = 0; i < samples; i++) {
+            const x = (i * 2) / samples - 1;
+            curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+        }
+        return curve;
+    }
+
+    // === Main Functions ===
+
+    async function generateAndPlayHaiku() {
+        const playBtn = document.getElementById('playBtn');
+        const autoPlayBtn = document.getElementById('autoPlayBtn');
+        const status = document.getElementById('status');
+        const haikuDisplay = document.getElementById('currentHaiku');
+
+        try {
+            playBtn.disabled = true;
+            autoPlayBtn.disabled = true;
+
+            // Generate haiku
+            const haiku = generateHaiku();
+            const lines = haiku.split('\n');
+            haikuDisplay.innerHTML = lines.map(line => 
+                `<span class="haiku-line">${line}</span>`
+            ).join('');
+
+            status.textContent = '🎵 Generating voice...';
+
+            // Call Netlify function to get speech
+            const response = await fetch('/.netlify/functions/generate-speech', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: haiku })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate speech');
+            }
+
+            status.textContent = '🎧 Processing audio...';
+
+            // Get audio data
+            const audioData = await response.arrayBuffer();
+            const ctx = getAudioContext();
+            const audioBuffer = await ctx.decodeAudioData(audioData);
+
+            status.textContent = '🔊 Speaking...';
+
+            // Apply electro shift effect and play
+            await applyElectroShift(audioBuffer);
+
+            status.textContent = '✨ Complete';
+
+            // If auto-playing, schedule next
+            if (isAutoPlaying) {
+                autoPlayTimeout = setTimeout(() => {
+                    generateAndPlayHaiku();
+                }, 3000); // 3 second pause between haikus
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            status.textContent = '❌ Error generating voice';
+            isAutoPlaying = false;
+            autoPlayBtn.textContent = '♾️ Continuous Flow';
+        } finally {
+            playBtn.disabled = false;
+            autoPlayBtn.disabled = false;
+        }
+    }
+
+    // === Event Listeners ===
+
+    document.getElementById('playBtn').addEventListener('click', () => {
+        if (!isAutoPlaying) {
+            generateAndPlayHaiku();
+        }
+    });
+
+    document.getElementById('autoPlayBtn').addEventListener('click', () => {
+        const btn = document.getElementById('autoPlayBtn');
+        isAutoPlaying = !isAutoPlaying;
+        
+        if (isAutoPlaying) {
+            btn.textContent = '⏸️ Pause Flow';
+            generateAndPlayHaiku();
+        } else {
+            btn.textContent = '♾️ Continuous Flow';
+            if (autoPlayTimeout) {
+                clearTimeout(autoPlayTimeout);
+            }
+        }
+    });
+</script>
+
+
+</body>
+</html>
